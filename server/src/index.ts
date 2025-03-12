@@ -19,16 +19,32 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cors());
+
+/* CONFIGURATIONS */
+dotenv.config(); // Load environment variables from .env file
+
+// Log the DATABASE_URL to ensure it is loaded correctly
+console.log("Database URL: ", process.env.DATABASE_URL);
+
+
+// CORS configuration to allow requests from your frontend (localhost:3000)
+app.use(cors({
+  origin: "http://localhost:3000", // Allow requests from the frontend URL
+  credentials: true // Allow cookies and other credentials to be sent in the requests
+}));
+
 
 /* ROUTES */
+app.get("/hello", (req, res) => {
+  res.send("Hello world");
+});
 app.use("/dashboard", dashboardRoutes); // http://localhost:8000/dashboard
-app.use("/products", productRoutes); // http://localhost:8000/products
-app.use("/users", userRoutes); // http://localhost:8000/users
-app.use("/expenses", expenseRoutes); // http://localhost:8000/expenses
+app.use("/products", productRoutes);    // http://localhost:8000/products
+app.use("/users", userRoutes);          // http://localhost:8000/users
+app.use("/expenses", expenseRoutes);    // http://localhost:8000/expenses
 
 /* SERVER */
-const port = Number(process.env.PORT) || 3001;
+const port = Number(process.env.PORT) || 8000;
 app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
 });

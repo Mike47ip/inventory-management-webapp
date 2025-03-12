@@ -13,6 +13,8 @@ const colors = ["#00C49F", "#0088FE", "#FFBB28"];
 
 const CardExpenseSummary = () => {
   const { data: dashboardMetrics, isLoading } = useGetDashboardMetricsQuery();
+  console.log("dashboardMetrics", dashboardMetrics);
+
 
   const expenseSummary = dashboardMetrics?.expenseSummary[0];
 

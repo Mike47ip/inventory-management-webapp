@@ -1,5 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+console.log('API URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+
 export interface Product {
   productId: string;
   name: string;
