@@ -19,6 +19,8 @@ model Products {
   price         Float
   rating        Float?
   stockQuantity Int
+  category      String      @default("Uncategorized") // Add a default value ,New category field (required)
+  image         String? // New image field (optional/nullable)
   Purchases     Purchases[]
   Sales         Sales[]
 }
