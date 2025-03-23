@@ -57,14 +57,16 @@ const Inventory = () => {
  // Defining columns for the DataGrid
  const columns: GridColDef[] = useMemo(
   () => [
-   { field: "name", headerName: "Name", flex: 1 },
+    { field: "productId", headerName: "ID", width: 120 },
+   { field: "name", headerName: "Name", flex: 0.5 },
    {
     field: "price",
     headerName: "Price",
-    flex: 0.5,
+    type: "number",
+    flex: 1,
     valueGetter: (value, row) => `$${row.price}`,
    },
-   { field: "rating", headerName: "Rating", flex: 0.3 },
+   { field: "rating", headerName: "Rating", type: "number", flex: 0.3 },
    { field: "stockQuantity", headerName: "Stock Quantity", flex: 0.5 },
   ],
   []
