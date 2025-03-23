@@ -31,15 +31,13 @@ const Inventory = () => {
   const updatePromises = selectedProductIds.map(async (productId) => {
    const productToUpdate = products.find((p) => p.productId === productId);
    if (productToUpdate) {
-
     console.log("Updating product:", productToUpdate); // Log the product being updated
     console.log(
-      "Old stock quantity:",
-      productToUpdate.stockQuantity,
-      "New stock quantity:",
-      productToUpdate.stockQuantity + restockQuantity
+     "Old stock quantity:",
+     productToUpdate.stockQuantity,
+     "New stock quantity:",
+     productToUpdate.stockQuantity + restockQuantity
     ); // Log old and new stock quantity
-
 
     await updateProduct({
      productId,
@@ -81,8 +79,8 @@ const Inventory = () => {
  // Custom filtering
  const filteredProducts = products.filter((product: Product) =>
   product.name.toLowerCase().includes(searchQuery.toLowerCase())
-);
-console.log("Filtered products:", filteredProducts); // Log filtered products
+ );
+ console.log("Filtered products:", filteredProducts); // Log filtered products
 
  return (
   <Box m="1.5rem 2.5rem">
@@ -122,25 +120,23 @@ console.log("Filtered products:", filteredProducts); // Log filtered products
 
    {/* Modal for restocking products */}
    <Modal open={openRestockModal} onClose={handleCloseRestockModal}>
-    <Box
-     position="absolute"
-     top="50%"
-     left="50%"
-     style={{
-      transform: "translate(-50%, -50%)",
-      backgroundColor: "white",
-      padding: "2rem",
-      borderRadius: "8px",
-     }}
-    >
+    <Box className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-lg">
      <h2>Restock Products</h2>
      <TextField
       label="Restock Quantity"
       type="number"
       value={restockQuantity}
-      onChange={(e) => setRestockQuantity(Number(e.target.value))}
+      onChange={(e) => {
+       // Only allow positive numbers
+       const value = Number(e.target.value);
+       if (value >= 0) {
+        setRestockQuantity(value);
+       }
+      }}
+      inputProps={{ min: "1" }} // Set minimum value to 1
       fullWidth
       margin="normal"
+      helperText="Please enter a positive quantity to add to inventory"
      />
      <Box mt="1rem" display="flex" justifyContent="space-between">
       <Button onClick={handleCloseRestockModal} variant="outlined">
@@ -150,6 +146,7 @@ console.log("Filtered products:", filteredProducts); // Log filtered products
        onClick={handleRestockProducts}
        color="primary"
        variant="contained"
+       disabled={restockQuantity <= 0} // Disable button if quantity is 0 or negative
       >
        Confirm
       </Button>
