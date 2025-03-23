@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createProduct = exports.getProducts = void 0;
+exports.updateProduct = exports.createProduct = exports.getProducts = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -49,3 +49,28 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.createProduct = createProduct;
+const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { productId } = req.params;
+        const updatedData = req.body;
+        // Check if product exists before updating
+        const existingProduct = yield prisma.products.findUnique({
+            where: { productId },
+        });
+        if (!existingProduct) {
+            res.status(404).json({ message: "Product not found" });
+            return;
+        }
+        // Update the product
+        const updatedProduct = yield prisma.products.update({
+            where: { productId },
+            data: updatedData,
+        });
+        res.status(200).json(updatedProduct);
+    }
+    catch (error) {
+        console.error("Error updating product:", error);
+        res.status(500).json({ message: "Error updating product", error: error.message });
+    }
+});
+exports.updateProduct = updateProduct;
