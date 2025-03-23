@@ -82,6 +82,14 @@ export const api = createApi({
       }),
       invalidatesTags: ["Products"],
     }),
+    updateProduct: build.mutation<Product, { productId: string; updatedProduct: Partial<Product> }>({
+      query: ({ productId, updatedProduct }) => ({
+        url: `/products/${productId}`,
+        method: "PATCH", // You could also use "PUT" depending on your API
+        body: updatedProduct,
+      }),
+      invalidatesTags: ["Products"], // Ensure it refreshes the product list
+    }),
     getUsers: build.query<User[], void>({
       query: () => "/users",
       providesTags: ["Users"],
@@ -97,6 +105,7 @@ export const {
   useGetDashboardMetricsQuery,
   useGetProductsQuery,
   useCreateProductMutation,
+  useUpdateProductMutation, // Exporting the new mutation
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,
 } = api;
