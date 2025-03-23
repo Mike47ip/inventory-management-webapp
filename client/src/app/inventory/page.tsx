@@ -31,12 +31,23 @@ const Inventory = () => {
   const updatePromises = selectedProductIds.map(async (productId) => {
    const productToUpdate = products.find((p) => p.productId === productId);
    if (productToUpdate) {
+
+    console.log("Updating product:", productToUpdate); // Log the product being updated
+    console.log(
+      "Old stock quantity:",
+      productToUpdate.stockQuantity,
+      "New stock quantity:",
+      productToUpdate.stockQuantity + restockQuantity
+    ); // Log old and new stock quantity
+
+
     await updateProduct({
      productId,
      updatedProduct: {
       stockQuantity: productToUpdate.stockQuantity + restockQuantity,
      },
     });
+    console.log("Product updated successfully:", productId); // Confirm update success
    }
   });
 
@@ -63,13 +74,15 @@ const Inventory = () => {
 
  // Row selection change handler
  const handleRowSelection = (newSelection: any) => {
+  console.log("Selected rows:", newSelection); // Log selected rows
   setSelectedProductIds(newSelection);
  };
 
  // Custom filtering
  const filteredProducts = products.filter((product: Product) =>
   product.name.toLowerCase().includes(searchQuery.toLowerCase())
- );
+);
+console.log("Filtered products:", filteredProducts); // Log filtered products
 
  return (
   <Box m="1.5rem 2.5rem">
