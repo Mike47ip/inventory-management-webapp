@@ -29,52 +29,31 @@ const Products = () => {
 
   const [createProduct] = useCreateProductMutation();
 
-  // Convert ProductFormData into FormData and submit
-// In your Products.tsx file
+  const handleCreateProduct = async (productData: ProductFormData) => {
+    try {
+      // Create FormData for multipart upload
+      const formData = new FormData();
+      
+      // Append text fields
+      formData.append('name', productData.name);
+      formData.append('price', productData.price.toString());
+      formData.append('stockQuantity', productData.stockQuantity.toString());
+      formData.append('rating', productData.rating.toString());
+      formData.append('category', productData.category);
 
-// In your Products.tsx file
+      // Append image if exists
+      if (productData.image) {
+        formData.append('image', productData.image);
+      }
 
-const handleCreateProduct = async (productData: ProductFormData) => {
-  try {
-    const newProduct: NewProduct = {
-      name: productData.name,
-      price: productData.price,
-      stockQuantity: productData.stockQuantity,
-      rating: productData.rating,
-      category: productData.category,
-    };
-
-    const formData = new FormData();
-
-    // Add the JSON stringified newProduct object
-    formData.append("product", JSON.stringify(newProduct));
-
-    // Append the image file if it exists
-    if (productData.image) {
-      formData.append("image", productData.image);
+      // Send the FormData 
+      await createProduct(formData);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create product", error);
     }
+  };
 
-    // Send FormData via API (Assuming `createProduct` accepts FormData)
-    await createProduct(formData); // Adjust your API to handle FormData
-
-    setIsModalOpen(false);
-  } catch (error) {
-    console.error("Failed to create product", error);
-  }
-};
-
-
-
-
-// Helper function to convert File to base64
-const convertFileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
-};
 
   if (isLoading) {
     return <div className="py-4">Loading...</div>;
@@ -124,7 +103,7 @@ const convertFileToBase64 = (file: File): Promise<string> => {
           >
             <div className="flex flex-col items-center">
               <Image
-                src={product.imageUrl ?? "/assets/default-image.png"} // Assuming the API returns a URL for the image
+                src={product.imageUrl ?? "/assets/default-image.png"} 
                 alt={product.name}
                 width={150}
                 height={150}
