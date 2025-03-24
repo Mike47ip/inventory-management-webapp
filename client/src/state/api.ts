@@ -18,7 +18,7 @@ export interface NewProduct {
   rating?: number;
   stockQuantity: number;
   category?: string;
-  imageBase64?: string; // For sending base64-encoded image
+  image?: File; // Representing image as a File object for multipart uploads
 }
 
 export interface SalesSummary {
@@ -78,22 +78,24 @@ export const api = createApi({
       }),
       providesTags: ["Products"],
     }),
-    // Keep using NewProduct type
-    createProduct: build.mutation<Product, NewProduct>({
-      query: (newProduct) => ({
-        url: "/products",
-        method: "POST",
-        body: newProduct,
-      }),
+    createProduct: build.mutation<Product, FormData>({  // Accept FormData directly in mutation
+      query: (formData) => {
+        return {
+          url: "/products",
+          method: "POST",
+          body: formData,  // Sending FormData directly
+          // Content-Type header will be set automatically by the browser
+        };
+      },
       invalidatesTags: ["Products"],
     }),
     updateProduct: build.mutation<Product, { productId: string; updatedProduct: Partial<Product> }>({
       query: ({ productId, updatedProduct }) => ({
         url: `/products/${productId}`,
-        method: "PATCH", // You could also use "PUT" depending on your API
+        method: "PATCH",
         body: updatedProduct,
       }),
-      invalidatesTags: ["Products"], // Ensure it refreshes the product list
+      invalidatesTags: ["Products"],
     }),
     getUsers: build.query<User[], void>({
       query: () => "/users",
