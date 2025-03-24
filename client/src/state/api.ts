@@ -8,6 +8,8 @@ export interface Product {
   price: number;
   rating?: number;
   stockQuantity: number;
+  category?: string;
+  imageUrl?: string;
 }
 
 export interface NewProduct {
@@ -15,6 +17,8 @@ export interface NewProduct {
   price: number;
   rating?: number;
   stockQuantity: number;
+  category?: string;
+  imageBase64?: string; // For sending base64-encoded image
 }
 
 export interface SalesSummary {
@@ -74,6 +78,7 @@ export const api = createApi({
       }),
       providesTags: ["Products"],
     }),
+    // Keep using NewProduct type
     createProduct: build.mutation<Product, NewProduct>({
       query: (newProduct) => ({
         url: "/products",
@@ -105,7 +110,7 @@ export const {
   useGetDashboardMetricsQuery,
   useGetProductsQuery,
   useCreateProductMutation,
-  useUpdateProductMutation, // Exporting the new mutation
+  useUpdateProductMutation,
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,
 } = api;

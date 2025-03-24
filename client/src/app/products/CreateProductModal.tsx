@@ -7,6 +7,8 @@ type ProductFormData = {
   price: number;
   stockQuantity: number;
   rating: number;
+  category: string;
+  image: File | null; // Ensure image is File or null
 };
 
 type CreateProductModalProps = {
@@ -20,23 +22,31 @@ const CreateProductModal = ({
   onClose,
   onCreate,
 }: CreateProductModalProps) => {
-  const [formData, setFormData] = useState({
-    productId: v4(),
+  const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     price: 0,
     stockQuantity: 0,
     rating: 0,
+    category: "",
+    image: null, // Default to null
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]:
-        name === "price" || name === "stockQuantity" || name === "rating"
-          ? parseFloat(value)
-          : value,
-    });
+    const { name, value, files } = e.target;
+    if (name === "image" && files && files.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        image: files[0], // Assign the first selected file
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]:
+          name === "price" || name === "stockQuantity" || name === "rating"
+            ? parseFloat(value)
+            : value,
+      }));
+    }
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -57,7 +67,7 @@ const CreateProductModal = ({
         <Header name="Create New Product" />
         <form onSubmit={handleSubmit} className="mt-5">
           {/* PRODUCT NAME */}
-          <label htmlFor="productName" className={labelCssStyles}>
+          <label htmlFor="name" className={labelCssStyles}>
             Product Name
           </label>
           <input
@@ -71,7 +81,7 @@ const CreateProductModal = ({
           />
 
           {/* PRICE */}
-          <label htmlFor="productPrice" className={labelCssStyles}>
+          <label htmlFor="price" className={labelCssStyles}>
             Price
           </label>
           <input
@@ -109,6 +119,33 @@ const CreateProductModal = ({
             onChange={handleChange}
             value={formData.rating}
             className={inputCssStyles}
+            required
+          />
+
+          {/* CATEGORY */}
+          <label htmlFor="category" className={labelCssStyles}>
+            Category
+          </label>
+          <input
+            type="text"
+            name="category"
+            placeholder="Category"
+            onChange={handleChange}
+            value={formData.category}
+            className={inputCssStyles}
+            required
+          />
+
+          {/* IMAGE */}
+          <label htmlFor="image" className={labelCssStyles}>
+            Product Image
+          </label>
+          <input
+            type="file"
+            name="image"
+            onChange={handleChange}
+            className={inputCssStyles}
+            accept="image/*"
             required
           />
 

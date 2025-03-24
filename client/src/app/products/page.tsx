@@ -1,6 +1,6 @@
 "use client";
 
-import { useCreateProductMutation, useGetProductsQuery } from "@/state/api";
+import { useCreateProductMutation, useGetProductsQuery, NewProduct } from "@/state/api";
 import { PlusCircleIcon, SearchIcon } from "lucide-react";
 import { useState } from "react";
 import Header from "@/app/(components)/Header";
@@ -13,6 +13,8 @@ type ProductFormData = {
   price: number;
   stockQuantity: number;
   rating: number;
+  category: string;
+  image: File | null;
 };
 
 const Products = () => {
@@ -26,9 +28,53 @@ const Products = () => {
   } = useGetProductsQuery(searchTerm);
 
   const [createProduct] = useCreateProductMutation();
-  const handleCreateProduct = async (productData: ProductFormData) => {
-    await createProduct(productData);
-  };
+
+  // Convert ProductFormData into FormData and submit
+// In your Products.tsx file
+
+// In your Products.tsx file
+
+const handleCreateProduct = async (productData: ProductFormData) => {
+  try {
+    const newProduct: NewProduct = {
+      name: productData.name,
+      price: productData.price,
+      stockQuantity: productData.stockQuantity,
+      rating: productData.rating,
+      category: productData.category,
+    };
+
+    const formData = new FormData();
+
+    // Add the JSON stringified newProduct object
+    formData.append("product", JSON.stringify(newProduct));
+
+    // Append the image file if it exists
+    if (productData.image) {
+      formData.append("image", productData.image);
+    }
+
+    // Send FormData via API (Assuming `createProduct` accepts FormData)
+    await createProduct(formData); // Adjust your API to handle FormData
+
+    setIsModalOpen(false);
+  } catch (error) {
+    console.error("Failed to create product", error);
+  }
+};
+
+
+
+
+// Helper function to convert File to base64
+const convertFileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
 
   if (isLoading) {
     return <div className="py-4">Loading...</div>;
@@ -70,44 +116,34 @@ const Products = () => {
       </div>
 
       {/* BODY PRODUCTS LIST */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg-grid-cols-3 gap-10 justify-between">
-        {isLoading ? (
-          <div>Loading...</div>
-        ) : (
-          products?.map((product) => (
-            <div
-              key={product.productId}
-              className="border shadow rounded-md p-4 max-w-full w-full mx-auto"
-            >
-              <div className="flex flex-col items-center">
-                <Image
-                  src={`https://s3-inventorymanagement.s3.us-east-2.amazonaws.com/product${
-                    Math.floor(Math.random() * 3) + 1
-                  }.png`}
-                  alt={product.name}
-                  width={150}
-                  height={150}
-                  className="mb-3 rounded-2xl w-36 h-36"
-                />
-                <h3 className="text-lg text-gray-900 font-semibold">
-                  {product.name}
-                </h3>
-                <p className="text-gray-800">${product.price.toFixed(2)}</p>
-                <div className="text-sm text-gray-600 mt-1">
-                  Stock: {product.stockQuantity}
-                </div>
-                {product.rating && (
-                  <div className="flex items-center mt-2">
-                    <Rating rating={product.rating} />
-                  </div>
-                )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 justify-between">
+        {products?.map((product) => (
+          <div
+            key={product.productId}
+            className="border shadow rounded-md p-4 max-w-full w-full mx-auto"
+          >
+            <div className="flex flex-col items-center">
+              <Image
+                src={product.imageUrl ?? "/assets/default-image.png"} // Assuming the API returns a URL for the image
+                alt={product.name}
+                width={150}
+                height={150}
+                className="mb-3 rounded-2xl w-36 h-36"
+              />
+              <h3 className="text-lg text-gray-900 font-semibold">
+                {product.name}
+              </h3>
+              <p className="text-gray-800">${product.price.toFixed(2)}</p>
+              <div className="text-sm text-gray-600 mt-1">
+                Stock: {product.stockQuantity}
               </div>
+              <Rating rating={product.rating ?? 0} />
             </div>
-          ))
-        )}
+          </div>
+        ))}
       </div>
 
-      {/* MODAL */}
+      {/* CREATE PRODUCT MODAL */}
       <CreateProductModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
