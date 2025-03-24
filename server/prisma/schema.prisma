@@ -8,25 +8,25 @@ datasource db {
 }
 
 model Users {
-  userId String @id
+  userId String @id @default(uuid()) // Auto-generated UUID for userId
   name   String
   email  String
 }
 
 model Products {
-  productId     String      @id
+  productId     String   @id @default(uuid()) // Auto-generated UUID for productId
   name          String
   price         Float
   rating        Float?
   stockQuantity Int
-  category      String      @default("Uncategorized") // Add a default value ,New category field (required)
-  image         String? // New image field (optional/nullable)
+  category      String   @default("Uncategorized") 
+  image         String?
   Purchases     Purchases[]
   Sales         Sales[]
 }
 
 model Sales {
-  saleId      String   @id
+  saleId      String   @id @default(uuid()) // Auto-generated UUID for saleId
   productId   String
   timestamp   DateTime
   quantity    Int
@@ -36,7 +36,7 @@ model Sales {
 }
 
 model Purchases {
-  purchaseId String   @id
+  purchaseId String   @id @default(uuid()) // Auto-generated UUID for purchaseId
   productId  String
   timestamp  DateTime
   quantity   Int
@@ -46,35 +46,35 @@ model Purchases {
 }
 
 model Expenses {
-  expenseId String   @id
+  expenseId String   @id @default(uuid()) // Auto-generated UUID for expenseId
   category  String
   amount    Float
   timestamp DateTime
 }
 
 model SalesSummary {
-  salesSummaryId   String   @id
+  salesSummaryId   String   @id @default(uuid()) // Auto-generated UUID for salesSummaryId
   totalValue       Float
   changePercentage Float?
   date             DateTime
 }
 
 model PurchaseSummary {
-  purchaseSummaryId String   @id
+  purchaseSummaryId String   @id @default(uuid()) // Auto-generated UUID for purchaseSummaryId
   totalPurchased    Float
   changePercentage  Float?
   date              DateTime
 }
 
 model ExpenseSummary {
-  expenseSummaryId  String              @id
+  expenseSummaryId  String   @id @default(uuid()) // Auto-generated UUID for expenseSummaryId
   totalExpenses     Float
   date              DateTime
   ExpenseByCategory ExpenseByCategory[]
 }
 
 model ExpenseByCategory {
-  expenseByCategoryId String         @id
+  expenseByCategoryId String   @id @default(uuid()) // Auto-generated UUID for expenseByCategoryId
   expenseSummaryId    String
   category            String
   amount              BigInt

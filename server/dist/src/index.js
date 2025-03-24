@@ -21,8 +21,9 @@ app.use(express_1.default.json());
 app.use((0, helmet_1.default)());
 app.use(helmet_1.default.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use((0, morgan_1.default)("common"));
-app.use(body_parser_1.default.json());
-app.use(body_parser_1.default.urlencoded({ extended: false }));
+// Set the payload size limit to 10MB for JSON and URL-encoded data
+app.use(body_parser_1.default.json({ limit: '100mb' }));
+app.use(body_parser_1.default.urlencoded({ limit: '100mb', extended: true }));
 /* CONFIGURATIONS */
 dotenv_1.default.config(); // Load environment variables from .env file
 // Log the DATABASE_URL to ensure it is loaded correctly

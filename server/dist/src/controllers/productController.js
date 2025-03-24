@@ -32,7 +32,7 @@ const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 exports.getProducts = getProducts;
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { productId, name, price, rating, stockQuantity } = req.body;
+        const { productId, name, price, rating, stockQuantity, category, image } = req.body; // Include category and image
         const product = yield prisma.products.create({
             data: {
                 productId,
@@ -40,6 +40,8 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 price,
                 rating,
                 stockQuantity,
+                category, // Add category
+                image, // Add image
             },
         });
         res.status(201).json(product);
@@ -64,13 +66,18 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         // Update the product
         const updatedProduct = yield prisma.products.update({
             where: { productId },
-            data: updatedData,
+            data: updatedData, // This will now include category and image
         });
         res.status(200).json(updatedProduct);
     }
     catch (error) {
         console.error("Error updating product:", error);
-        res.status(500).json({ message: "Error updating product", error: error.message });
+        res
+            .status(500)
+            .json({
+            message: "Error updating product",
+            error: error.message,
+        });
     }
 });
 exports.updateProduct = updateProduct;
