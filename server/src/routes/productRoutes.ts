@@ -5,6 +5,7 @@ import {
   getProducts,
   uploadProductImage 
 } from "../controllers/productController";
+import multer from "multer";
 
 const router = Router();
 
@@ -12,9 +13,27 @@ const router = Router();
 router.get("/", getProducts);
 
 // POST create a new product with image upload
-router.post("/", uploadProductImage, createProduct);
+router.post("/", (req, res, next) => {
+  uploadProductImage(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ message: "Multer error: " + err.message });
+    } else if (err) {
+      return res.status(400).json({ message: "File upload error: " + err.message });
+    }
+    next();
+  });
+}, createProduct);
 
 // PATCH update an existing product with optional image upload
-router.patch("/:productId", uploadProductImage, updateProduct);
+router.patch("/:productId", (req, res, next) => {
+  uploadProductImage(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ message: "Multer error: " + err.message });
+    } else if (err) {
+      return res.status(400).json({ message: "File upload error: " + err.message });
+    }
+    next();
+  });
+}, updateProduct);
 
 export default router;

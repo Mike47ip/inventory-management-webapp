@@ -1,6 +1,6 @@
 "use client";
 
-import { useCreateProductMutation, useGetProductsQuery, } from "@/state/api";
+import { useCreateProductMutation, useGetProductsQuery } from "@/state/api";
 import { PlusCircleIcon, SearchIcon } from "lucide-react";
 import { useState } from "react";
 import Header from "@/app/(components)/Header";
@@ -33,7 +33,6 @@ const Products = () => {
     try {
       // Create FormData for multipart upload
       const formData = new FormData();
-      
       // Append text fields
       formData.append('name', productData.name);
       formData.append('price', productData.price.toString());
@@ -41,19 +40,20 @@ const Products = () => {
       formData.append('rating', productData.rating.toString());
       formData.append('category', productData.category);
 
+      console.log('this is image url',productData.image);
+
       // Append image if exists
       if (productData.image) {
         formData.append('image', productData.image);
       }
 
-      // Send the FormData 
+      // Send the FormData
       await createProduct(formData);
       setIsModalOpen(false);
     } catch (error) {
       console.error("Failed to create product", error);
     }
   };
-
 
   if (isLoading) {
     return <div className="py-4">Loading...</div>;
@@ -66,6 +66,7 @@ const Products = () => {
       </div>
     );
   }
+  
 
   return (
     <div className="mx-auto pb-5 w-full">
@@ -103,11 +104,14 @@ const Products = () => {
           >
             <div className="flex flex-col items-center">
               <Image
-                src={product.imageUrl ?? "/assets/default-image.png"} 
+ src={product.image ? `http://localhost:8000${product.image}` : "/assets/default-image.png"}
                 alt={product.name}
                 width={150}
                 height={150}
                 className="mb-3 rounded-2xl w-36 h-36"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/assets/default-image.png'; // Fallback in case image fails
+                }}
               />
               <h3 className="text-lg text-gray-900 font-semibold">
                 {product.name}

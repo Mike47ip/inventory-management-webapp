@@ -17,7 +17,9 @@ dotenv.config();
 const app = express();
 
 // Serve static files from the uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
+console.log('Serving static files from:', path.join(__dirname, '../uploads'));
+
 
 app.use(express.json());
 app.use(helmet());

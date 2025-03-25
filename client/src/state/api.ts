@@ -9,7 +9,7 @@ export interface Product {
   rating?: number;
   stockQuantity: number;
   category?: string;
-  imageUrl?: string;
+  image?: string;
 }
 
 export interface NewProduct {

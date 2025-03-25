@@ -19,7 +19,8 @@ const expenseRoutes_1 = __importDefault(require("./routes/expenseRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 // Serve static files from the uploads directory
-app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, 'uploads')));
+app.use('/uploads', express_1.default.static(path_1.default.resolve(__dirname, 'uploads')));
+console.log('Serving static files from:', path_1.default.join(__dirname, '../uploads'));
 app.use(express_1.default.json());
 app.use((0, helmet_1.default)());
 app.use(helmet_1.default.crossOriginResourcePolicy({ policy: "cross-origin" }));
