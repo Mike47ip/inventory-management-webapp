@@ -20,6 +20,7 @@ type ProductFormData = {
 const Products = () => {
  const [searchTerm, setSearchTerm] = useState("");
  const [isModalOpen, setIsModalOpen] = useState(false);
+ const [dropdownVisible, setDropdownVisible] = useState<number | null>(null); // State to manage which dropdown is visible
 
  const { data: products, isLoading, isError } = useGetProductsQuery(searchTerm);
 
@@ -35,8 +36,6 @@ const Products = () => {
    formData.append("stockQuantity", productData.stockQuantity.toString());
    formData.append("rating", productData.rating.toString());
    formData.append("category", productData.category);
-
-   console.log("this is image url", productData.image);
 
    // Append image if exists
    if (productData.image) {
@@ -89,38 +88,59 @@ const Products = () => {
 
    {/* BODY PRODUCTS LIST */}
    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 justify-between">
-  {products?.map((product) => (
-    <div
+    {products?.map((product, index) => (
+     <div
       key={product.productId}
       className="border shadow rounded-md p-4 max-w-full w-full mx-auto relative"
-    >
-      {/* Icon positioned in top-right corner */}
-      <MoreHorizontal className="absolute top-2 right-2  text-gray-400 cursor-pointer" />
+     >
+      {/* More Options Icon positioned in top-right corner */}
+      <MoreHorizontal
+       className="absolute top-2 right-2 text-gray-400 cursor-pointer"
+       onClick={() =>
+        setDropdownVisible(dropdownVisible === index ? null : index) // Toggle dropdown visibility based on index
+       }
+      />
+
+      {/* Dropdown Menu */}
+      {dropdownVisible === index && (
+       <div className="absolute top-10 right-2 bg-white shadow rounded-md z-10">
+        <button className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+         View
+        </button>
+        <button className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+         Edit
+        </button>
+        <button className="block px-4 py-2 text-sm text-red-500 hover:bg-red-100">
+         Delete
+        </button>
+       </div>
+      )}
 
       <div className="flex flex-col items-center">
-        <Image
-          src={
-            product.image
-              ? `http://localhost:8000${product.image}`
-              : "/assets/default-image.png"
-          }
-          alt={product.name}
-          width={150}
-          height={150}
-          className="mb-3 rounded-2xl w-36 h-36 object-contain"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = "/assets/default-image.png"; // Fallback in case image fails
-          }}
-        />
-        <h3 className="text-lg text-gray-900 font-semibold">{product.name}</h3>
-        <p className="text-gray-800">${product.price.toFixed(2)}</p>
-        <div className="text-sm text-gray-600 mt-1">Stock: {product.stockQuantity}</div>
-        <Rating rating={product.rating ?? 0} />
+       <Image
+        src={
+         product.image
+          ? `http://localhost:8000${product.image}`
+          : "/assets/default-image.png"
+        }
+        alt={product.name}
+        width={150}
+        height={150}
+        className="mb-3 rounded-2xl w-36 h-36 object-contain"
+        onError={(e) => {
+         (e.target as HTMLImageElement).src = "/assets/default-image.png"; // Fallback in case image fails
+        }}
+       />
+       <h3 className="text-lg text-gray-900 font-semibold">{product.name}</h3>
+       <p className="text-gray-800">${product.price.toFixed(2)}</p>
+       <div className="text-sm text-gray-600 mt-1">
+        Stock: {product.stockQuantity}
+       </div>
+       <Rating rating={product.rating ?? 0} />
       </div>
-    </div>
-  ))}
-</div>
-
+     </div>
+    ))}
+   </div>
 
    {/* CREATE PRODUCT MODAL */}
    <CreateProductModal
