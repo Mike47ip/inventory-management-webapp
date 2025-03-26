@@ -1,8 +1,15 @@
 "use client";
 
+import { useState } from "react";
+import { 
+  Modal, 
+  Box, 
+  Typography, 
+  Backdrop, 
+  Fade 
+} from "@mui/material";
 import { useCreateProductMutation, useGetProductsQuery } from "@/state/api";
 import { PlusCircleIcon, SearchIcon, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
 import Header from "@/app/(components)/Header";
 import Rating from "@/app/(components)/Rating";
 import CreateProductModal from "./CreateProductModal";
@@ -17,10 +24,97 @@ type ProductFormData = {
  image: File | null;
 };
 
+type Product = {
+  productId: string;
+  name: string;
+  price: number;
+  stockQuantity: number;
+  rating?: number;
+  category?: string;
+  image?: string;
+};
+
+const ProductViewModal = ({ 
+  open, 
+  handleClose, 
+  product 
+}: { 
+  open: boolean, 
+  handleClose: () => void, 
+  product: Product | null 
+}) => {
+  if (!product) return null;
+
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      closeAfterTransition
+      slots={{ backdrop: Backdrop }}
+      slotProps={{
+        backdrop: {
+          timeout: 500,
+        },
+      }}
+    >
+      <Fade in={open}>
+        <Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 1000,
+          height: 500,
+          bgcolor: 'background.paper',
+          border: '2px solid #000',
+          boxShadow: 24,
+          p: 4,
+          borderRadius: 2,
+        }}>
+          <div className="flex  items-center">
+            <Image
+              src={
+                product.image
+                  ? `http://localhost:8000${product.image}`
+                  : "/assets/default-image.png"
+              }
+              alt={product.name}
+              width={200}
+              height={200}
+              className="mb-3 rounded-2xl w-72 h-72 object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/assets/default-image.png";
+              }}
+            />
+            <Typography variant="h5" component="h2" className="text-center mb-4">
+              {product.name}
+            </Typography>
+            <div className="text-center">
+              <p className="text-xl font-semibold text-gray-800">
+                ${product.price.toFixed(2)}
+              </p>
+              <div className="text-sm text-gray-600 mt-1">
+                Stock: {product.stockQuantity}
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                Category: {product.category}
+              </div>
+              <div className="mt-2">
+                <Rating rating={product.rating ?? 0} />
+              </div>
+            </div>
+          </div>
+        </Box>
+      </Fade>
+    </Modal>
+  );
+};
+
 const Products = () => {
  const [searchTerm, setSearchTerm] = useState("");
  const [isModalOpen, setIsModalOpen] = useState(false);
- const [dropdownVisible, setDropdownVisible] = useState<number | null>(null); // State to manage which dropdown is visible
+ const [dropdownVisible, setDropdownVisible] = useState<number | null>(null);
+ const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
  const { data: products, isLoading, isError } = useGetProductsQuery(searchTerm);
 
@@ -28,26 +122,27 @@ const Products = () => {
 
  const handleCreateProduct = async (productData: ProductFormData) => {
   try {
-   // Create FormData for multipart upload
    const formData = new FormData();
-   // Append text fields
    formData.append("name", productData.name);
    formData.append("price", productData.price.toString());
    formData.append("stockQuantity", productData.stockQuantity.toString());
    formData.append("rating", productData.rating.toString());
    formData.append("category", productData.category);
 
-   // Append image if exists
    if (productData.image) {
     formData.append("image", productData.image);
    }
 
-   // Send the FormData
    await createProduct(formData);
    setIsModalOpen(false);
   } catch (error) {
    console.error("Failed to create product", error);
   }
+ };
+
+ const handleViewProduct = (product: Product) => {
+  setSelectedProduct(product);
+  setDropdownVisible(null);
  };
 
  if (isLoading) {
@@ -97,21 +192,24 @@ const Products = () => {
       <MoreHorizontal
        className="absolute top-2 right-2 text-gray-400 cursor-pointer"
        onClick={() =>
-        setDropdownVisible(dropdownVisible === index ? null : index) // Toggle dropdown visibility based on index
+        setDropdownVisible(dropdownVisible === index ? null : index)
        }
       />
 
       {/* Dropdown Menu */}
       {dropdownVisible === index && (
-       <div className="absolute top-10 right-2 bg-white shadow rounded-md z-10">
-        <button className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+       <div className="absolute top-8 w-24 font-semibold right-2 bg-white shadow rounded-md z-10">
+        <button 
+          className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          onClick={() => handleViewProduct(product)}
+        >
          View
         </button>
-        <button className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
          Edit
         </button>
-        <button className="block px-4 py-2 text-sm text-red-500 hover:bg-red-100">
-         Delete
+        <button className="w-full px-4 py-2 text-sm text-red-500 hover:bg-red-100">
+         Archive
         </button>
        </div>
       )}
@@ -128,7 +226,7 @@ const Products = () => {
         height={150}
         className="mb-3 rounded-2xl w-36 h-36 object-contain"
         onError={(e) => {
-         (e.target as HTMLImageElement).src = "/assets/default-image.png"; // Fallback in case image fails
+         (e.target as HTMLImageElement).src = "/assets/default-image.png";
         }}
        />
        <h3 className="text-lg text-gray-900 font-semibold">{product.name}</h3>
@@ -147,6 +245,13 @@ const Products = () => {
     isOpen={isModalOpen}
     onClose={() => setIsModalOpen(false)}
     onCreate={handleCreateProduct}
+   />
+
+   {/* PRODUCT VIEW MODAL */}
+   <ProductViewModal
+    open={!!selectedProduct}
+    handleClose={() => setSelectedProduct(null)}
+    product={selectedProduct}
    />
   </div>
  );
