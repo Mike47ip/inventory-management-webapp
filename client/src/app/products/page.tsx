@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Modal, 
-  Box, 
-  Typography, 
-  Backdrop, 
-  Fade 
-} from "@mui/material";
+import { Modal, Box, Typography, Backdrop, Fade } from "@mui/material";
 import { useCreateProductMutation, useGetProductsQuery } from "@/state/api";
 import { PlusCircleIcon, SearchIcon, MoreHorizontal } from "lucide-react";
 import Header from "@/app/(components)/Header";
@@ -25,41 +19,41 @@ type ProductFormData = {
 };
 
 type Product = {
-  productId: string;
-  name: string;
-  price: number;
-  stockQuantity: number;
-  rating?: number;
-  category?: string;
-  image?: string;
+ productId: string;
+ name: string;
+ price: number;
+ stockQuantity: number;
+ rating?: number;
+ category?: string;
+ image?: string;
 };
 
-const ProductViewModal = ({ 
-  open, 
-  handleClose, 
-  product 
-}: { 
-  open: boolean, 
-  handleClose: () => void, 
-  product: Product | null 
+const ProductViewModal = ({
+ open,
+ handleClose,
+ product,
+}: {
+ open: boolean;
+ handleClose: () => void;
+ product: Product | null;
 }) => {
-  if (!product) return null;
+ if (!product) return null;
 
-  return (
-    <Modal
-      open={open}
-
-      onClose={handleClose}
-      closeAfterTransition
-      slots={{ backdrop: Backdrop }}
-      slotProps={{
-        backdrop: {
-          timeout: 500,
-        },
-      }}
-    >
-      <Fade in={open}>
-        <Box className="
+ return (
+  <Modal
+   open={open}
+   onClose={handleClose}
+   closeAfterTransition
+   slots={{ backdrop: Backdrop }}
+   slotProps={{
+    backdrop: {
+     timeout: 500,
+    },
+   }}
+  >
+   <Fade in={open}>
+    <Box
+     className="
         fixed 
         lg:flex
         lg:!items-center
@@ -86,51 +80,54 @@ const ProductViewModal = ({
         p-4 
         rounded-md
         overflow-y-auto
-  ">
-          <div className="flex h-full w-full flex-col lg:flex-row justify-center items-center">
-            <div className="flex justify-center rounded-2xl w-[50%] md:w-[60%] lg:w-[80%] object-contain">
-
-            <Image
-              src={
-                product.image
-                  ? `http://localhost:8000${product.image}`
-                  : "/assets/default-image.png"
-                }
-                alt={product.name}
-                width={200}
-                height={200}
-                className="max-w-full max-h-full object-contain w-full h-auto"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/assets/default-image.png";
-                }}
-                />
-                </div>
-                <div className="lg:flex lg:flex-col lg:gap-2 justify-end h-full">
-
-            <Typography variant="h5" component="h2" className="text-center !text-4xl !font-semibold font-b mb-4">
-              {product.name} 
-            </Typography>
-            <div className="text-center">
-              <p className="text-xl font-semibold text-gray-800">
-                ${product.price.toFixed(2)}
-              </p>
-              <div className="text-sm text-gray-600 mt-1">
-                Stock: {product.stockQuantity}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                Category: {product.category}
-              </div>
-            </div>
-              <div className="flex flex-row justify-center  mt-2">
-                <Rating rating={product.rating ?? 0} />
-              </div>
-              <span>{product.productId}</span>
-                </div>
-          </div>
-        </Box>
-      </Fade>
-    </Modal>
-  );
+  "
+    >
+     <div className="flex h-full w-full flex-col lg:flex-row justify-center items-center">
+      <div className="flex justify-center rounded-2xl w-[50%] md:w-[60%] lg:w-[80%] object-contain">
+       <Image
+        src={
+         product.image
+          ? `http://localhost:8000${product.image}`
+          : "/assets/default-image.png"
+        }
+        alt={product.name}
+        width={200}
+        height={200}
+        className="max-w-full max-h-full object-contain w-full h-auto"
+        onError={(e) => {
+         (e.target as HTMLImageElement).src = "/assets/default-image.png";
+        }}
+       />
+      </div>
+      <div className="lg:flex lg:flex-col lg:gap-2 justify-end h-full">
+       <Typography
+        variant="h5"
+        component="h2"
+        className="text-center !text-4xl !font-semibold font-b mb-4"
+       >
+        {product.name}
+       </Typography>
+       <div className="text-center">
+        <p className="text-xl font-semibold text-gray-800">
+         ${product.price.toFixed(2)}
+        </p>
+        <div className="text-sm text-gray-600 mt-1">
+         Stock: {product.stockQuantity}
+        </div>
+        <div className="text-sm text-gray-600 mt-1">
+         Category: {product.category}
+        </div>
+       </div>
+       <div className="flex flex-row justify-center  mt-2">
+        <Rating rating={product.rating ?? 0} />
+       </div>
+       <span>{product.productId}</span>
+      </div>
+     </div>
+    </Box>
+   </Fade>
+  </Modal>
+ );
 };
 
 const Products = () => {
@@ -222,9 +219,9 @@ const Products = () => {
       {/* Dropdown Menu */}
       {dropdownVisible === index && (
        <div className="absolute top-8 w-24 font-semibold right-2 bg-white shadow rounded-md z-10">
-        <button 
-          className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          onClick={() => handleViewProduct(product)}
+        <button
+         className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+         onClick={() => handleViewProduct(product)}
         >
          View
         </button>
