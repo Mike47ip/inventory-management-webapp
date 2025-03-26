@@ -33,7 +33,7 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: { 
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 5 * 1024 * 1024
   },
   fileFilter: (
     req: MulterRequest, 
@@ -52,97 +52,85 @@ const upload = multer({
   }
 });
 
-export const getProducts = async (
- req: Request,
- res: Response
-): Promise<void> => {
- try {
-  const search = req.query.search?.toString();
-  const products = await prisma.products.findMany({
-   where: {
-    name: {
-     contains: search,
-    },
-   },
-  });
-  res.json(products);
- } catch (error) {
-  res.status(500).json({ message: "Error retrieving products" });
- }
+export const getProducts = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const search = req.query.search?.toString();
+    const products = await prisma.products.findMany({
+      where: {
+        name: {
+          contains: search,
+        },
+      },
+    });
+    return res.json(products);
+  } catch (error) {
+    return res.status(500).json({ message: "Error retrieving products" });
+  }
 };
 
-export const createProduct = async (
- req: MulterRequest,
- res: Response
-): Promise<void> => {
- try {
-  const { name, price, rating, stockQuantity, category } = req.body;
-  
-  const productData: any = {
-    name,
-    price: parseFloat(price),
-    stockQuantity: parseInt(stockQuantity),
-    category,
-  };
+export const createProduct = async (req: MulterRequest, res: Response): Promise<Response> => {
+  try {
+    const { name, price, rating, stockQuantity, category } = req.body;
+    
+    const productData: any = {
+      name,
+      price: parseFloat(price),
+      stockQuantity: parseInt(stockQuantity),
+      category,
+    };
 
-  if (rating) {
-    productData.rating = parseFloat(rating);
+    if (rating) {
+      productData.rating = parseFloat(rating);
+    }
+
+    if (req.file) {
+      productData.image = `/uploads/products/${req.file.filename}`;
+    }
+
+    const product = await prisma.products.create({
+      data: productData,
+    });
+
+    return res.status(201).json(product);
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return res.status(500).json({ 
+      message: "Error creating product",
+      error: (error as Error).message 
+    });
   }
-
-  if (req.file) {
-    console.log('Uploaded file details:', req.file);
-    productData.image = `/uploads/products/${req.file.filename}`;
-  }
-
-  const product = await prisma.products.create({
-   data: productData,
-  });
-
-  res.status(201).json(product);
- } catch (error) {
-  console.error("Error creating product:", error);
-  res.status(500).json({ 
-    message: "Error creating product",
-    error: (error as Error).message 
-  });
- }
 };
 
-export const updateProduct = async (
- req: MulterRequest,
- res: Response
-): Promise<void> => {
- try {
-  const { productId } = req.params;
-  const updatedData: any = req.body;
+export const updateProduct = async (req: MulterRequest, res: Response): Promise<Response> => {
+  try {
+    const { productId } = req.params;
+    const updatedData: any = req.body;
 
-  if (req.file) {
-    console.log('Uploaded file details:', req.file);
-    updatedData.image = `/uploads/products/${req.file.filename}`;
+    if (req.file) {
+      updatedData.image = `/uploads/products/${req.file.filename}`;
+    }
+
+    const existingProduct = await prisma.products.findUnique({
+      where: { productId },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const updatedProduct = await prisma.products.update({
+      where: { productId },
+      data: updatedData,
+    });
+
+    return res.status(200).json(updatedProduct);
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return res.status(500).json({
+      message: "Error updating product",
+      error: (error as Error).message,
+    });
   }
-
-  const existingProduct = await prisma.products.findUnique({
-   where: { productId },
-  });
-
-  if (!existingProduct) {
-   res.status(404).json({ message: "Product not found" });
-   return;
-  }
-
-  const updatedProduct = await prisma.products.update({
-   where: { productId },
-   data: updatedData,
-  });
-
-  res.status(200).json(updatedProduct);
- } catch (error) {
-  console.error("Error updating product:", error);
-  res.status(500).json({
-    message: "Error updating product",
-    error: (error as Error).message,
-   });
- }
 };
 
 export const uploadProductImage = upload.single('image');
