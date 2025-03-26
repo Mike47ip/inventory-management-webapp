@@ -88,7 +88,7 @@ const ProductViewModal = ({
         overflow-y-auto
   ">
           <div className="flex h-full w-full flex-col lg:flex-row justify-center items-center">
-            <div className="flex justify-center  rounded-2xl w-[50%] md:w-[60%] lg:w-[80%] object-contain">
+            <div className="flex justify-center rounded-2xl w-[50%] md:w-[60%] lg:w-[80%] object-contain">
 
             <Image
               src={
@@ -99,7 +99,7 @@ const ProductViewModal = ({
                 alt={product.name}
                 width={200}
                 height={200}
-                className="lg:w-[80%] xl:max-w-[69%] flex-1 xl:max-h-[70%]"
+                className="max-w-full max-h-full object-contain w-full h-auto"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/assets/default-image.png";
                 }}
