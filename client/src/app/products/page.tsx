@@ -48,6 +48,7 @@ const ProductViewModal = ({
   return (
     <Modal
       open={open}
+
       onClose={handleClose}
       closeAfterTransition
       slots={{ backdrop: Backdrop }}
@@ -58,36 +59,56 @@ const ProductViewModal = ({
       }}
     >
       <Fade in={open}>
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 1000,
-          height: 500,
-          bgcolor: 'background.paper',
-          border: '2px solid #000',
-          boxShadow: 24,
-          p: 4,
-          borderRadius: 2,
-        }}>
-          <div className="flex  items-center">
+        <Box className="
+        fixed 
+        lg:flex
+        lg:!items-center
+        lg:!justify-center
+        top-1/2 
+        left-1/2 
+        transform 
+        -translate-x-1/2 
+        -translate-y-1/2 
+        w-[90%] 
+        md:w-full
+        max-w-lg 
+        md:max-w-2xl
+        lg:max-w-4xl
+        xl:max-w-6xl
+        h-auto
+        max-h-[80vh]
+        lg:min-h-[450px]
+        xl:min-h-[550px]
+        bg-white 
+        border-2 
+        border-black 
+        shadow-lg 
+        p-4 
+        rounded-md
+        overflow-y-auto
+  ">
+          <div className="flex h-full w-full flex-col lg:flex-row justify-center items-center">
+            <div className="flex justify-center  rounded-2xl w-[50%] md:w-[60%] lg:w-[80%] object-contain">
+
             <Image
               src={
                 product.image
                   ? `http://localhost:8000${product.image}`
                   : "/assets/default-image.png"
-              }
-              alt={product.name}
-              width={200}
-              height={200}
-              className="mb-3 rounded-2xl w-72 h-72 object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/assets/default-image.png";
-              }}
-            />
-            <Typography variant="h5" component="h2" className="text-center mb-4">
-              {product.name}
+                }
+                alt={product.name}
+                width={200}
+                height={200}
+                className="lg:w-[80%] xl:max-w-[69%] flex-1 xl:max-h-[70%]"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/assets/default-image.png";
+                }}
+                />
+                </div>
+                <div className="lg:flex lg:flex-col lg:gap-2 justify-end h-full">
+
+            <Typography variant="h5" component="h2" className="text-center !text-4xl !font-semibold font-b mb-4">
+              {product.name} 
             </Typography>
             <div className="text-center">
               <p className="text-xl font-semibold text-gray-800">
@@ -99,10 +120,12 @@ const ProductViewModal = ({
               <div className="text-sm text-gray-600 mt-1">
                 Category: {product.category}
               </div>
-              <div className="mt-2">
+            </div>
+              <div className="flex flex-row justify-center  mt-2">
                 <Rating rating={product.rating ?? 0} />
               </div>
-            </div>
+              <span>{product.productId}</span>
+                </div>
           </div>
         </Box>
       </Fade>
