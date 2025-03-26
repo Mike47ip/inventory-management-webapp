@@ -89,14 +89,16 @@ export const api = createApi({
       },
       invalidatesTags: ["Products"],
     }),
-    updateProduct: build.mutation<Product, { productId: string; updatedProduct: Partial<Product> }>({
-      query: ({ productId, updatedProduct }) => ({
-        url: `/products/${productId}`,
-        method: "PATCH",
-        body: updatedProduct,
-      }),
-      invalidatesTags: ["Products"],
-    }),
+// In your api.ts
+updateProduct: build.mutation<Product, { productId: string; formData: FormData }>({
+  query: ({ productId, formData }) => ({
+    url: `/products/${productId}`,
+    method: "PATCH",
+    body: formData,
+    // No Content-Type header - let browser set it with boundary
+  }),
+  invalidatesTags: ["Products"],
+}),
     getUsers: build.query<User[], void>({
       query: () => "/users",
       providesTags: ["Users"],

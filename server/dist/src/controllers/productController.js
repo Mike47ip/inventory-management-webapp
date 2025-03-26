@@ -32,7 +32,7 @@ const storage = multer_1.default.diskStorage({
 const upload = (0, multer_1.default)({
     storage: storage,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
+        fileSize: 5 * 1024 * 1024
     },
     fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png|gif|webp/;
@@ -57,37 +57,33 @@ const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 },
             },
         });
-        res.json(products);
+        return res.json(products);
     }
     catch (error) {
-        res.status(500).json({ message: "Error retrieving products" });
+        return res.status(500).json({ message: "Error retrieving products" });
     }
 });
 exports.getProducts = getProducts;
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, price, rating, stockQuantity, category } = req.body;
-        const productData = {
-            name,
-            price: parseFloat(price),
-            stockQuantity: parseInt(stockQuantity),
-            category,
+        // Parse and validate numbers
+        const parseNumber = (value, fieldName) => {
+            const num = Number(value);
+            if (isNaN(num)) {
+                throw new Error(`Invalid ${fieldName} value`);
+            }
+            return num;
         };
-        if (rating) {
-            productData.rating = parseFloat(rating);
-        }
-        if (req.file) {
-            console.log('Uploaded file details:', req.file);
-            productData.image = `/uploads/products/${req.file.filename}`;
-        }
+        const productData = Object.assign(Object.assign(Object.assign({ name, price: parseNumber(price, 'price'), stockQuantity: parseNumber(stockQuantity, 'stock quantity') }, (category && { category })), (rating && { rating: parseNumber(rating, 'rating') })), (req.file && { image: `/uploads/products/${req.file.filename}` }));
         const product = yield prisma.products.create({
             data: productData,
         });
-        res.status(201).json(product);
+        return res.status(201).json(product);
     }
     catch (error) {
         console.error("Error creating product:", error);
-        res.status(500).json({
+        return res.status(500).json({
             message: "Error creating product",
             error: error.message
         });
@@ -97,27 +93,30 @@ exports.createProduct = createProduct;
 const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { productId } = req.params;
-        const updatedData = req.body;
-        if (req.file) {
-            console.log('Uploaded file details:', req.file);
-            updatedData.image = `/uploads/products/${req.file.filename}`;
-        }
+        // Parse and validate numbers
+        const parseNumber = (value, fieldName) => {
+            const num = Number(value);
+            if (isNaN(num)) {
+                throw new Error(`Invalid ${fieldName} value`);
+            }
+            return num;
+        };
+        const updatedData = Object.assign(Object.assign(Object.assign({ name: req.body.name, price: parseNumber(req.body.price, 'price'), stockQuantity: parseNumber(req.body.stockQuantity, 'stock quantity') }, (req.body.rating && { rating: parseNumber(req.body.rating, 'rating') })), (req.body.category && { category: req.body.category })), (req.file && { image: `/uploads/products/${req.file.filename}` }));
         const existingProduct = yield prisma.products.findUnique({
             where: { productId },
         });
         if (!existingProduct) {
-            res.status(404).json({ message: "Product not found" });
-            return;
+            return res.status(404).json({ message: "Product not found" });
         }
         const updatedProduct = yield prisma.products.update({
             where: { productId },
             data: updatedData,
         });
-        res.status(200).json(updatedProduct);
+        return res.status(200).json(updatedProduct);
     }
     catch (error) {
         console.error("Error updating product:", error);
-        res.status(500).json({
+        return res.status(500).json({
             message: "Error updating product",
             error: error.message,
         });

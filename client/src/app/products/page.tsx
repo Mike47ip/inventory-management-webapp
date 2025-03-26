@@ -1,13 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, Box, Typography, Backdrop, Fade } from "@mui/material";
-import { useCreateProductMutation, useGetProductsQuery } from "@/state/api";
+import { 
+  Modal, 
+  Box, 
+  Typography, 
+  Backdrop, 
+  Fade 
+} from "@mui/material";
+import { 
+  useCreateProductMutation, 
+  useGetProductsQuery, 
+  useUpdateProductMutation
+} from "@/state/api";
 import { PlusCircleIcon, SearchIcon, MoreHorizontal } from "lucide-react";
 import Header from "@/app/(components)/Header";
 import Rating from "@/app/(components)/Rating";
 import CreateProductModal from "./CreateProductModal";
 import Image from "next/image";
+import ProductEditModal from "./ProductEditModal";
 
 type ProductFormData = {
  name: string;
@@ -132,13 +143,16 @@ const ProductViewModal = ({
 
 const Products = () => {
  const [searchTerm, setSearchTerm] = useState("");
- const [isModalOpen, setIsModalOpen] = useState(false);
+ const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
  const [dropdownVisible, setDropdownVisible] = useState<number | null>(null);
  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+ const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+ const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
- const { data: products, isLoading, isError } = useGetProductsQuery(searchTerm);
+ const { data: products, isLoading, isError, refetch } = useGetProductsQuery(searchTerm);
 
  const [createProduct] = useCreateProductMutation();
+ const [updateProduct] = useUpdateProductMutation();
 
  const handleCreateProduct = async (productData: ProductFormData) => {
   try {
@@ -154,14 +168,53 @@ const Products = () => {
    }
 
    await createProduct(formData);
-   setIsModalOpen(false);
+   setIsCreateModalOpen(false);
+   refetch();
   } catch (error) {
    console.error("Failed to create product", error);
   }
  };
 
+// In Products.tsx
+// In Products.tsx
+const handleUpdateProduct = async ({ 
+  productId, 
+  formData 
+}: { 
+  productId: string; 
+  formData: FormData 
+}) => {
+  try {
+    await updateProduct({ productId, formData }).unwrap();
+    refetch();
+  } catch (error) {
+    console.error("Failed to update product", error);
+  } finally {
+    setIsEditModalOpen(false);
+    setSelectedProduct(null);
+  }
+};
+
+// Then pass it like this:
+<ProductEditModal
+  open={isEditModalOpen}
+  handleClose={() => {
+    setIsEditModalOpen(false);
+    setSelectedProduct(null);
+  }}
+  product={selectedProduct}
+  onUpdate={handleUpdateProduct}  // Now matches the expected type
+/>
+
  const handleViewProduct = (product: Product) => {
   setSelectedProduct(product);
+  setIsViewModalOpen(true);
+  setDropdownVisible(null);
+ };
+
+ const handleEditProduct = (product: Product) => {
+  setSelectedProduct(product);
+  setIsEditModalOpen(true);
   setDropdownVisible(null);
  };
 
@@ -195,7 +248,7 @@ const Products = () => {
     <Header name="Products" />
     <button
      className="flex items-center bg-blue-500 hover:bg-blue-700 text-gray-200 font-bold py-2 px-4 rounded"
-     onClick={() => setIsModalOpen(true)}
+     onClick={() => setIsCreateModalOpen(true)}
     >
      <PlusCircleIcon className="w-5 h-5 mr-2 !text-gray-200" /> Create Product
     </button>
@@ -225,7 +278,10 @@ const Products = () => {
         >
          View
         </button>
-        <button className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <button 
+         className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+         onClick={() => handleEditProduct(product)}
+        >
          Edit
         </button>
         <button className="w-full px-4 py-2 text-sm text-red-500 hover:bg-red-100">
@@ -254,7 +310,9 @@ const Products = () => {
        <div className="text-sm text-gray-600 mt-1">
         Stock: {product.stockQuantity}
        </div>
-       <Rating rating={product.rating ?? 0} />
+       <div className="flex flex-row justify-center">
+        <Rating rating={product.rating ?? 0} />
+       </div>
       </div>
      </div>
     ))}
@@ -262,16 +320,27 @@ const Products = () => {
 
    {/* CREATE PRODUCT MODAL */}
    <CreateProductModal
-    isOpen={isModalOpen}
-    onClose={() => setIsModalOpen(false)}
+    isOpen={isCreateModalOpen}
+    onClose={() => setIsCreateModalOpen(false)}
     onCreate={handleCreateProduct}
    />
 
    {/* PRODUCT VIEW MODAL */}
    <ProductViewModal
-    open={!!selectedProduct}
-    handleClose={() => setSelectedProduct(null)}
+    open={isViewModalOpen}
+    handleClose={() => setIsViewModalOpen(false)}
     product={selectedProduct}
+   />
+
+   {/* PRODUCT EDIT MODAL */}
+   <ProductEditModal
+    open={isEditModalOpen}
+    handleClose={() => {
+     setIsEditModalOpen(false);
+     setSelectedProduct(null);
+    }}
+    product={selectedProduct}
+    onUpdate={handleUpdateProduct}
    />
   </div>
  );

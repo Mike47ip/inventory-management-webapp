@@ -1,7 +1,20 @@
 import { useState, useEffect } from "react";
-import { Modal, Box, TextField, Button, Typography } from "@mui/material";
+import { 
+  Modal, 
+  Box, 
+  TextField, 
+  Button, 
+  Typography 
+} from "@mui/material";
 import Image from "next/image";
 
+// Custom type for update parameters
+type UpdateProductParams = {
+  productId: string;
+  formData: FormData;
+};
+
+// Product type (matching your API slice)
 type Product = {
   productId: string;
   name: string;
@@ -21,88 +34,124 @@ const ProductEditModal = ({
   open: boolean;
   handleClose: () => void;
   product: Product | null;
-  onUpdate: (formData: FormData) => Promise<void>;
+  onUpdate: (params: UpdateProductParams) => Promise<void>; // Explicitly typed
 }) => {
+  // State for edited product details
   const [editedProduct, setEditedProduct] = useState<Partial<Product>>({});
+  
+  // State for image handling
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Initialize form when product changes
   useEffect(() => {
     if (product) {
-      setEditedProduct({ ...product });
-      setImagePreview(product.image || null);
+      // Deep copy of product to avoid direct mutation
+      setEditedProduct({ 
+        ...product,
+        price: product.price,
+        stockQuantity: product.stockQuantity
+      });
+      
+      // Set image preview
+      setImagePreview(product.image 
+        ? `http://localhost:8000${product.image}` 
+        : null
+      );
+      
+      // Reset image file
       setImageFile(null);
     }
-  }, [product]);
+  }, [product, open]);
 
+  // Clean up object URLs
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
+
+  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
     setEditedProduct(prev => ({
       ...prev,
       [name]: ['price', 'stockQuantity', 'rating'].includes(name) 
-        ? value === '' ? undefined : Number(value)
+        ? (value === '' ? undefined : Number(value))
         : value
     }));
   };
 
+  // Handle image file selection
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
       setImageFile(file);
+      
+      // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
   };
 
-  // Clean up object URLs
-  useEffect(() => {
-    return () => {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-    };
-  }, [imagePreview]);
-
+  // Submit handler
   const handleSubmit = async () => {
+    // Validate required fields
+    if (!product?.productId) {
+      console.error('[ERROR] Missing productId');
+      console.log('[DEBUG] handleSubmit triggered');
+      console.log('[DEBUG] Current product:', product);
+      alert('Product not properly loaded');
+      return;
+    }
+
+    // Validate required fields
     if (!editedProduct.name || editedProduct.price === undefined) {
-      alert('Name and price are required');
+      alert('Please fill in all required fields');
       return;
     }
 
     try {
+      // Create FormData for submission
       const formData = new FormData();
       
-      // Type-safe number handling
-      const getNumberValue = (value: unknown, fieldName: string): number => {
-        const num = Number(value);
-        if (isNaN(num)) throw new Error(`Invalid ${fieldName} value`);
-        return num;
-      };
-
+      // Append all edited fields
       formData.append("name", editedProduct.name);
-      formData.append("price", getNumberValue(editedProduct.price, 'price').toString());
-      formData.append("stockQuantity", 
-        getNumberValue(editedProduct.stockQuantity, 'stock quantity').toString());
+      formData.append("price", String(editedProduct.price));
+      formData.append("stockQuantity", String(editedProduct.stockQuantity));
       
-      if (editedProduct.rating !== undefined) {
-        formData.append("rating", getNumberValue(editedProduct.rating, 'rating').toString());
-      }
-      
+      // Optional fields
       if (editedProduct.category) {
         formData.append("category", editedProduct.category);
       }
-
+      
+      if (editedProduct.rating !== undefined) {
+        formData.append("rating", String(editedProduct.rating));
+      }
+      
+      // Append image if a new file is selected
       if (imageFile) {
         formData.append("image", imageFile);
       }
 
-      await onUpdate(formData);
+      // Call update with productId and formData
+      await onUpdate({ 
+        productId: product.productId, 
+        formData 
+      });
+      
+      // Close modal after successful update
       handleClose();
     } catch (error) {
-      console.error('Update failed:', error);
-      alert(error instanceof Error ? error.message : 'Update failed');
+      console.error('[ERROR] Update failed:', error);
+      alert('Failed to update product');
     }
   };
 
+  // Render nothing if no product is selected
   if (!product) return null;
 
   return (
@@ -110,7 +159,6 @@ const ProductEditModal = ({
       open={open}
       onClose={handleClose}
       aria-labelledby="edit-product-modal"
-      aria-describedby="modal-to-edit-product-details"
     >
       <Box sx={{
         position: 'absolute',

@@ -72,20 +72,23 @@ export const createProduct = async (req: MulterRequest, res: Response): Promise<
   try {
     const { name, price, rating, stockQuantity, category } = req.body;
     
-    const productData: any = {
-      name,
-      price: parseFloat(price),
-      stockQuantity: parseInt(stockQuantity),
-      category,
+    // Parse and validate numbers
+    const parseNumber = (value: any, fieldName: string): number => {
+      const num = Number(value);
+      if (isNaN(num)) {
+        throw new Error(`Invalid ${fieldName} value`);
+      }
+      return num;
     };
 
-    if (rating) {
-      productData.rating = parseFloat(rating);
-    }
-
-    if (req.file) {
-      productData.image = `/uploads/products/${req.file.filename}`;
-    }
+    const productData = {
+      name,
+      price: parseNumber(price, 'price'),
+      stockQuantity: parseNumber(stockQuantity, 'stock quantity'),
+      ...(category && { category }),
+      ...(rating && { rating: parseNumber(rating, 'rating') }),
+      ...(req.file && { image: `/uploads/products/${req.file.filename}` })
+    };
 
     const product = await prisma.products.create({
       data: productData,
@@ -104,11 +107,24 @@ export const createProduct = async (req: MulterRequest, res: Response): Promise<
 export const updateProduct = async (req: MulterRequest, res: Response): Promise<Response> => {
   try {
     const { productId } = req.params;
-    const updatedData: any = req.body;
+    
+    // Parse and validate numbers
+    const parseNumber = (value: any, fieldName: string): number => {
+      const num = Number(value);
+      if (isNaN(num)) {
+        throw new Error(`Invalid ${fieldName} value`);
+      }
+      return num;
+    };
 
-    if (req.file) {
-      updatedData.image = `/uploads/products/${req.file.filename}`;
-    }
+    const updatedData = {
+      name: req.body.name,
+      price: parseNumber(req.body.price, 'price'),
+      stockQuantity: parseNumber(req.body.stockQuantity, 'stock quantity'),
+      ...(req.body.rating && { rating: parseNumber(req.body.rating, 'rating') }),
+      ...(req.body.category && { category: req.body.category }),
+      ...(req.file && { image: `/uploads/products/${req.file.filename}` })
+    };
 
     const existingProduct = await prisma.products.findUnique({
       where: { productId },
