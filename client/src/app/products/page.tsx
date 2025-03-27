@@ -166,7 +166,9 @@ const Products = () => {
 const { data: products, isLoading, isError, refetch } = useGetProductsQuery(searchTerm);
 // Filter products in your render
 const activeProducts = products?.filter(product => !archivedIds.includes(product.productId));
-const archivedProducts = products?.filter(product => archivedIds.includes(product.productId));
+const archivedProducts = products?.filter(product => 
+  archivedIds.includes(product.productId)
+) || []; // Fallback to empty array
 
 
  const [createProduct] = useCreateProductMutation();
@@ -265,13 +267,18 @@ const handleUpdateProduct = async ({
    <div className="flex justify-between items-center mb-6">
         <Header name="Products" />
         <div className="flex gap-2">
-          <Link
-            href="/products/archive"
-            className="flex items-center bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-          >
-            <ArchiveIcon className="w-5 h-5 mr-2" /> 
-            View Archive
-          </Link>
+        <Link
+  href="/products/archive"
+  className="flex items-center bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded relative"
+>
+  <ArchiveIcon className="w-5 h-5 mr-2" />
+  View Archive
+  {archivedProducts.length > 0 && (
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+      {archivedProducts.length}
+    </span>
+  )}
+</Link>
           <button
             className="flex items-center bg-blue-500 hover:bg-blue-700 text-gray-200 font-bold py-2 px-4 rounded"
             onClick={() => setIsCreateModalOpen(true)}
