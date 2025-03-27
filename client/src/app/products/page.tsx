@@ -13,12 +13,15 @@ import {
   useGetProductsQuery, 
   useUpdateProductMutation
 } from "@/state/api";
-import { PlusCircleIcon, SearchIcon, MoreHorizontal } from "lucide-react";
+import { PlusCircleIcon, SearchIcon, MoreHorizontal, ArchiveIcon } from "lucide-react";
 import Header from "@/app/(components)/Header";
 import Rating from "@/app/(components)/Rating";
 import CreateProductModal from "./CreateProductModal";
 import Image from "next/image";
 import ProductEditModal from "./ProductEditModal";
+import { archiveProduct, unarchiveProduct, getArchivedProducts } from "@/utils/archive";
+import Link from "next/link";
+
 
 type ProductFormData = {
  name: string;
@@ -93,8 +96,8 @@ const ProductViewModal = ({
         overflow-y-auto
   "
     >
-     <div className="flex h-full w-full flex-col lg:flex-row justify-center items-center">
-      <div className="flex justify-center rounded-2xl w-[50%] md:w-[60%] lg:w-[80%] object-contain">
+     <div className="flex h-full w-full flex-col lg:flex-row gap-5 justify-center items-center object-contain">
+      <div className="flex justify-center  w-[50%] md:w-[60%] lg:w-[65%] lg:h-auto object-contain">
        <Image
         src={
          product.image
@@ -104,7 +107,7 @@ const ProductViewModal = ({
         alt={product.name}
         width={200}
         height={200}
-        className="max-w-full max-h-full object-contain w-full h-auto"
+        className="object-contain rounded-3xl w-[71%]  h-auto"
         onError={(e) => {
          (e.target as HTMLImageElement).src = "/assets/default-image.png";
         }}
@@ -148,8 +151,23 @@ const Products = () => {
  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+ const [archivedIds, setArchivedIds] = useState<string[]>(getArchivedProducts());
 
- const { data: products, isLoading, isError, refetch } = useGetProductsQuery(searchTerm);
+ const handleArchiveProduct = (productId: string) => {
+  archiveProduct(productId);
+  setArchivedIds([...archivedIds, productId]);
+};
+
+ const handleUnarchiveProduct = (productId: string) => {
+  unarchiveProduct(productId);
+  setArchivedIds(archivedIds.filter(id => id !== productId));
+};
+
+const { data: products, isLoading, isError, refetch } = useGetProductsQuery(searchTerm);
+// Filter products in your render
+const activeProducts = products?.filter(product => !archivedIds.includes(product.productId));
+const archivedProducts = products?.filter(product => archivedIds.includes(product.productId));
+
 
  const [createProduct] = useCreateProductMutation();
  const [updateProduct] = useUpdateProductMutation();
@@ -245,18 +263,28 @@ const handleUpdateProduct = async ({
 
    {/* HEADER BAR */}
    <div className="flex justify-between items-center mb-6">
-    <Header name="Products" />
-    <button
-     className="flex items-center bg-blue-500 hover:bg-blue-700 text-gray-200 font-bold py-2 px-4 rounded"
-     onClick={() => setIsCreateModalOpen(true)}
-    >
-     <PlusCircleIcon className="w-5 h-5 mr-2 !text-gray-200" /> Create Product
-    </button>
-   </div>
+        <Header name="Products" />
+        <div className="flex gap-2">
+          <Link
+            href="/products/archive"
+            className="flex items-center bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+          >
+            <ArchiveIcon className="w-5 h-5 mr-2" /> 
+            View Archive
+          </Link>
+          <button
+            className="flex items-center bg-blue-500 hover:bg-blue-700 text-gray-200 font-bold py-2 px-4 rounded"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <PlusCircleIcon className="w-5 h-5 mr-2 !text-gray-200" /> Create Product
+          </button>
+        </div>
+      </div>
+
 
    {/* BODY PRODUCTS LIST */}
    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 justify-between">
-    {products?.map((product, index) => (
+    {activeProducts?.map((product, index) => (
      <div
       key={product.productId}
       className="border shadow rounded-md p-4 max-w-full w-full mx-auto relative"
@@ -271,24 +299,30 @@ const handleUpdateProduct = async ({
 
       {/* Dropdown Menu */}
       {dropdownVisible === index && (
-       <div className="absolute top-8 w-24 font-semibold right-2 bg-white shadow rounded-md z-10">
-        <button
-         className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-         onClick={() => handleViewProduct(product)}
-        >
-         View
-        </button>
-        <button 
-         className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-         onClick={() => handleEditProduct(product)}
-        >
-         Edit
-        </button>
-        <button className="w-full px-4 py-2 text-sm text-red-500 hover:bg-red-100">
-         Archive
-        </button>
-       </div>
-      )}
+  <div className="absolute top-8 w-24 font-semibold right-2 bg-white shadow rounded-md z-10">
+    <button
+      className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      onClick={() => handleViewProduct(product)}
+    >
+      View
+    </button>
+    <button 
+      className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      onClick={() => handleEditProduct(product)}
+    >
+      Edit
+    </button>
+    <button 
+      className="w-full px-4 py-2 text-sm text-red-500 hover:bg-red-100"
+      onClick={() => archivedIds.includes(product.productId) 
+        ? handleUnarchiveProduct(product.productId)
+        : handleArchiveProduct(product.productId)
+      }
+    >
+      {archivedIds.includes(product.productId) ? 'Unarchive' : 'Archive'}
+    </button>
+  </div>
+)}
 
       <div className="flex flex-col items-center">
        <Image
