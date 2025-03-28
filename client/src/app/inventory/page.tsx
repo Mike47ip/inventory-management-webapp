@@ -74,11 +74,12 @@ const Inventory = () => {
         field: "price",
         headerName: "Price",
         type: "number",
-        flex: 1,
+        flex: 0.5,
+        headerAlign: "left", // Align header text to the left
         valueGetter: (value, row) => `$${row.price}`,
       },
       { field: "rating", headerName: "Rating", type: "number", flex: 0.3 },
-      { field: "stockQuantity", headerName: "Stock Quantity", flex: 0.5 },
+      { field: "stockQuantity", headerName: "Stock Quantity", flex: 0.5,   headerAlign: "right" },
     ],
     []
   );

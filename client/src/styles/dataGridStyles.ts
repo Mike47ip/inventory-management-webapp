@@ -71,6 +71,7 @@ export const dataGridStyles: SxProps<Theme> = {
   '& .MuiDataGrid-cell[data-field="price"]': {
     fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
     fontWeight: '100',
+    fontSize: '14px',
    display: 'flex',
    justifyContent: 'center',
    alignItems: 'center'
