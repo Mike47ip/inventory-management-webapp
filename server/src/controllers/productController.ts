@@ -55,15 +55,21 @@ const upload = multer({
 export const getProducts = async (req: Request, res: Response): Promise<Response> => {
   try {
     const search = req.query.search?.toString();
+    
     const products = await prisma.products.findMany({
-      where: {
+      where: search ? {
         name: {
           contains: search,
-        },
-      },
+          mode: 'insensitive' // Add case-insensitive search
+        }
+      } : undefined, // Return all products if no search term
     });
+
+    console.log(`Search: "${search}" | Found ${products.length} products`); // Debug log
+    
     return res.json(products);
   } catch (error) {
+    console.error("Error searching products:", error);
     return res.status(500).json({ message: "Error retrieving products" });
   }
 };
@@ -104,47 +110,78 @@ export const createProduct = async (req: MulterRequest, res: Response): Promise<
   }
 };
 
-export const updateProduct = async (req: MulterRequest, res: Response): Promise<Response> => {
+export const updateProduct = async (req: Request, res: Response): Promise<Response> => {
+  const { productId } = req.params;
+  let updateData: any = req.body;
+
+  console.log('FULL REQUEST HEADERS:', req.headers);
+    console.log('FULL REQUEST BODY:', req.body);
+    console.log('CONTENT TYPE:', req.get('Content-Type'));
+
+  console.group('\n🔄 Product Update Request');
+  console.log('📦 Product ID:', productId);
+  console.log('📊 Raw Update Data:', updateData);
+  console.log('⏱️ Timestamp:', new Date().toISOString());
+  console.groupEnd();
+
   try {
-    const { productId } = req.params;
-    
-    // Parse and validate numbers
-    const parseNumber = (value: any, fieldName: string): number => {
-      const num = Number(value);
-      if (isNaN(num)) {
-        throw new Error(`Invalid ${fieldName} value`);
-      }
-      return num;
-    };
-
-    const updatedData = {
-      name: req.body.name,
-      price: parseNumber(req.body.price, 'price'),
-      stockQuantity: parseNumber(req.body.stockQuantity, 'stock quantity'),
-      ...(req.body.rating && { rating: parseNumber(req.body.rating, 'rating') }),
-      ...(req.body.category && { category: req.body.category }),
-      ...(req.file && { image: `/uploads/products/${req.file.filename}` })
-    };
-
-    const existingProduct = await prisma.products.findUnique({
-      where: { productId },
-    });
-
-    if (!existingProduct) {
-      return res.status(404).json({ message: "Product not found" });
+    // Validate input
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
     }
 
-    const updatedProduct = await prisma.products.update({
-      where: { productId },
-      data: updatedData,
+    // Handle FormData (multipart) vs JSON
+    if (req.is('multipart/form-data')) {
+      // Convert FormData fields to proper types
+      updateData = {
+        ...updateData,
+        price: updateData.price ? Number(updateData.price) : undefined,
+        rating: updateData.rating ? Number(updateData.rating) : undefined,
+        stockQuantity: updateData.stockQuantity ? Number(updateData.stockQuantity) : undefined
+      };
+    }
+
+    // Type validation
+    if (updateData.stockQuantity && isNaN(Number(updateData.stockQuantity))) {
+      return res.status(400).json({ message: "stockQuantity must be a number" });
+    }
+
+    // Debug current state
+    const currentProduct = await prisma.products.findUnique({
+      where: { productId }
     });
 
-    return res.status(200).json(updatedProduct);
+    console.log('\n📦 Current Product State:', {
+      productId: currentProduct?.productId,
+      currentStock: currentProduct?.stockQuantity,
+      requestedChanges: updateData
+    });
+
+    // Perform update
+    const updatedProduct = await prisma.products.update({
+      where: { productId },
+      data: updateData
+    });
+
+    console.log('\n✅ Update Successful:', {
+      productId: updatedProduct.productId,
+      updatedFields: Object.keys(updateData),
+      newStock: updatedProduct.stockQuantity,
+      timestamp: new Date().toISOString()
+    });
+
+    return res.json(updatedProduct);
   } catch (error) {
-    console.error("Error updating product:", error);
-    return res.status(500).json({
+    console.error('\n❌ Update Failed:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = process.env.NODE_ENV === 'development' ? 
+      { stack: error instanceof Error ? error.stack : undefined } : undefined;
+
+    return res.status(500).json({ 
       message: "Error updating product",
-      error: (error as Error).message,
+      error: errorMessage,
+      ...errorDetails
     });
   }
 };

@@ -51,15 +51,18 @@ const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     try {
         const search = (_a = req.query.search) === null || _a === void 0 ? void 0 : _a.toString();
         const products = yield prisma.products.findMany({
-            where: {
+            where: search ? {
                 name: {
                     contains: search,
-                },
-            },
+                    mode: 'insensitive' // Add case-insensitive search
+                }
+            } : undefined, // Return all products if no search term
         });
+        console.log(`Search: "${search}" | Found ${products.length} products`); // Debug log
         return res.json(products);
     }
     catch (error) {
+        console.error("Error searching products:", error);
         return res.status(500).json({ message: "Error retrieving products" });
     }
 });
@@ -91,35 +94,58 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 });
 exports.createProduct = createProduct;
 const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { productId } = req.params;
+    let updateData = req.body;
+    console.log('FULL REQUEST HEADERS:', req.headers);
+    console.log('FULL REQUEST BODY:', req.body);
+    console.log('CONTENT TYPE:', req.get('Content-Type'));
+    console.group('\n🔄 Product Update Request');
+    console.log('📦 Product ID:', productId);
+    console.log('📊 Raw Update Data:', updateData);
+    console.log('⏱️ Timestamp:', new Date().toISOString());
+    console.groupEnd();
     try {
-        const { productId } = req.params;
-        // Parse and validate numbers
-        const parseNumber = (value, fieldName) => {
-            const num = Number(value);
-            if (isNaN(num)) {
-                throw new Error(`Invalid ${fieldName} value`);
-            }
-            return num;
-        };
-        const updatedData = Object.assign(Object.assign(Object.assign({ name: req.body.name, price: parseNumber(req.body.price, 'price'), stockQuantity: parseNumber(req.body.stockQuantity, 'stock quantity') }, (req.body.rating && { rating: parseNumber(req.body.rating, 'rating') })), (req.body.category && { category: req.body.category })), (req.file && { image: `/uploads/products/${req.file.filename}` }));
-        const existingProduct = yield prisma.products.findUnique({
-            where: { productId },
-        });
-        if (!existingProduct) {
-            return res.status(404).json({ message: "Product not found" });
+        // Validate input
+        if (!productId) {
+            return res.status(400).json({ message: "Product ID is required" });
         }
+        // Handle FormData (multipart) vs JSON
+        if (req.is('multipart/form-data')) {
+            // Convert FormData fields to proper types
+            updateData = Object.assign(Object.assign({}, updateData), { price: updateData.price ? Number(updateData.price) : undefined, rating: updateData.rating ? Number(updateData.rating) : undefined, stockQuantity: updateData.stockQuantity ? Number(updateData.stockQuantity) : undefined });
+        }
+        // Type validation
+        if (updateData.stockQuantity && isNaN(Number(updateData.stockQuantity))) {
+            return res.status(400).json({ message: "stockQuantity must be a number" });
+        }
+        // Debug current state
+        const currentProduct = yield prisma.products.findUnique({
+            where: { productId }
+        });
+        console.log('\n📦 Current Product State:', {
+            productId: currentProduct === null || currentProduct === void 0 ? void 0 : currentProduct.productId,
+            currentStock: currentProduct === null || currentProduct === void 0 ? void 0 : currentProduct.stockQuantity,
+            requestedChanges: updateData
+        });
+        // Perform update
         const updatedProduct = yield prisma.products.update({
             where: { productId },
-            data: updatedData,
+            data: updateData
         });
-        return res.status(200).json(updatedProduct);
+        console.log('\n✅ Update Successful:', {
+            productId: updatedProduct.productId,
+            updatedFields: Object.keys(updateData),
+            newStock: updatedProduct.stockQuantity,
+            timestamp: new Date().toISOString()
+        });
+        return res.json(updatedProduct);
     }
     catch (error) {
-        console.error("Error updating product:", error);
-        return res.status(500).json({
-            message: "Error updating product",
-            error: error.message,
-        });
+        console.error('\n❌ Update Failed:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorDetails = process.env.NODE_ENV === 'development' ?
+            { stack: error instanceof Error ? error.stack : undefined } : undefined;
+        return res.status(500).json(Object.assign({ message: "Error updating product", error: errorMessage }, errorDetails));
     }
 });
 exports.updateProduct = updateProduct;

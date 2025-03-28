@@ -1,7 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+// Log the API URL for debugging
 console.log('API URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
 
+// Type definitions remain exactly the same
 export interface Product {
   productId: string;
   name: string;
@@ -18,7 +20,7 @@ export interface NewProduct {
   rating?: number;
   stockQuantity: number;
   category?: string;
-  image?: File; // Representing image as a File object for multipart uploads
+  image?: File;
 }
 
 export interface SalesSummary {
@@ -67,10 +69,12 @@ export const api = createApi({
   reducerPath: "api",
   tagTypes: ["DashboardMetrics", "Products", "Users", "Expenses"],
   endpoints: (build) => ({
+    // Query endpoints remain unchanged
     getDashboardMetrics: build.query<DashboardMetrics, void>({
       query: () => "/dashboard",
       providesTags: ["DashboardMetrics"],
     }),
+    
     getProducts: build.query<Product[], string | void>({
       query: (search) => ({
         url: "/products",
@@ -78,43 +82,79 @@ export const api = createApi({
       }),
       providesTags: ["Products"],
     }),
-    createProduct: build.mutation<Product, FormData>({  // Accept FormData directly in mutation
-      query: (formData) => {
-        return {
-          url: "/products",
-          method: "POST",
-          body: formData,  // Sending FormData directly
-          // Content-Type header will be set automatically by the browser
-        };
-      },
-      invalidatesTags: ["Products"],
-    }),
-// In your api.ts
-updateProduct: build.mutation<Product, { productId: string; formData: FormData }>({
-  query: ({ productId, formData }) => ({
-    url: `/products/${productId}`,
-    method: "PATCH",
-    body: formData,
-    // No Content-Type header - let browser set it with boundary
-  }),
-  invalidatesTags: ["Products"],
-}),
+    
     getUsers: build.query<User[], void>({
       query: () => "/users",
       providesTags: ["Users"],
     }),
+    
     getExpensesByCategory: build.query<ExpenseByCategorySummary[], void>({
       query: () => "/expenses",
       providesTags: ["Expenses"],
     }),
+
+    // Mutation endpoints with improved implementations
+    createProduct: build.mutation<Product, FormData>({
+      query: (formData) => ({
+        url: "/products",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Products"],
+    }),
+
+    // Main updateProduct mutation - handles both FormData and JSON
+    updateProduct: build.mutation<
+      Product,
+      { 
+        productId: string; 
+        updateData: Partial<Product> | FormData 
+      }
+    >({
+      query: ({ productId, updateData }) => {
+        const isFormData = updateData instanceof FormData;
+        
+        return {
+          url: `/products/${productId}`,
+          method: "PATCH",
+          body: updateData,
+          headers: isFormData 
+            ? undefined // Browser sets Content-Type for FormData
+            : { 'Content-Type': 'application/json' }
+        };
+      },
+      invalidatesTags: ["Products"],
+    }),
+
+    // Dedicated mutation for field updates
+    updateProductFields: build.mutation<
+      Product,
+      { 
+        productId: string; 
+        updateData: Partial<Product> 
+      }
+    >({
+      query: ({ productId, updateData }) => ({
+        url: `/products/${productId}`,
+        method: "PATCH",
+        body: updateData,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }),
+      invalidatesTags: ["Products"],
+    }),
   }),
 });
 
+// Export hooks with all mutations
 export const {
   useGetDashboardMetricsQuery,
   useGetProductsQuery,
-  useCreateProductMutation,
-  useUpdateProductMutation,
   useGetUsersQuery,
   useGetExpensesByCategoryQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useUpdateProductFieldsMutation,
 } = api;

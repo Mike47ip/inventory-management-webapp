@@ -205,7 +205,7 @@ const handleUpdateProduct = async ({
   formData: FormData 
 }) => {
   try {
-    await updateProduct({ productId, formData }).unwrap();
+    await updateProduct({ productId,updateData: formData }).unwrap();
     refetch();
   } catch (error) {
     console.error("Failed to update product", error);
