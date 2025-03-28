@@ -1,4 +1,3 @@
-// src/styles/dataGridStyles.ts
 import { SxProps, Theme } from '@mui/material/styles';
 
 export const dataGridStyles: SxProps<Theme> = {
@@ -9,6 +8,30 @@ export const dataGridStyles: SxProps<Theme> = {
   borderRadius: '10px',
   border: '1px solid #e0e0e0', // Subtle border
   boxShadow: '-10px 0 15px -5px rgba(0, 0, 0, 0.08), 10px 0 15px -5px rgba(0, 0, 0, 0.08)',
+
+  // Stock quantity styling - green for high stock
+  '& .high-stock-cell': {
+    '& .MuiDataGrid-cellContent': {
+      backgroundColor: 'rgba(46, 204, 113, 0.15)', // Light green background
+      color: '#27ae60', // Darker green text
+      fontWeight: 600,
+      padding: '4px 8px',
+      borderRadius: '4px',
+      display: 'inline-block',
+    }
+  },
+
+  // Stock quantity styling - red for low stock
+  '& .low-stock-cell': {
+    '& .MuiDataGrid-cellContent': {
+      backgroundColor: 'rgba(231, 76, 60, 0.15)', // Light red background
+      color: '#c0392b', // Darker red text
+      fontWeight: 600,
+      padding: '4px 8px',
+      borderRadius: '4px',
+      display: 'inline-block',
+    }
+  },
 
   // Column headers - more prominent
   '& .MuiDataGrid-columnHeaders': {
@@ -25,11 +48,11 @@ export const dataGridStyles: SxProps<Theme> = {
     cursor: 'pointer',
   },
 
-    // Add zebra stripe style for even rows
-    '& .MuiDataGrid-row:nth-of-type(even)': {
-      backgroundColor: '#f0f0f0', // Light shade for even rows
-    },
-  
+  // Add zebra stripe style for even rows
+  '& .MuiDataGrid-row:nth-of-type(even)': {
+    backgroundColor: '#f0f0f0', // Light shade for even rows
+  },
+
   // Cell styling
   '& .MuiDataGrid-cell': {
     fontSize: '0.875rem',
@@ -72,10 +95,9 @@ export const dataGridStyles: SxProps<Theme> = {
     fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
     fontWeight: '100',
     fontSize: '14px',
-   display: 'flex',
-   justifyContent: 'center',
-   alignItems: 'center'
-
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   
   // Stock quantity column - right aligned and monospaced for numbers
@@ -103,6 +125,22 @@ export const dataGridStyles: SxProps<Theme> = {
     fontFamily: 'Raleway, sans-serif',
     fontWeight: '600',
     fontSize: '13px' // Increased font size (adjust as needed)
+  },
+
+  // Image column - centered with proper spacing
+  '& .MuiDataGrid-cell[data-field="image"]': {
+    padding: '8px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Optional: Add hover effect for images
+  '& .MuiDataGrid-cell[data-field="image"] img': {
+    transition: 'transform 0.2s ease-in-out',
+  },
+  '& .MuiDataGrid-cell[data-field="image"] img:hover': {
+    transform: 'scale(1.1)',
   },
   
   // Selected row highlighting
@@ -156,5 +194,28 @@ export const darkDataGridStyles: SxProps<Theme> = {
   },
   '& .MuiDataGrid-footerContainer': {
     borderTop: '2px solid #3d3d3d',
+  },
+  '& .high-stock-cell': {
+    '& .MuiDataGrid-cellContent': {
+      backgroundColor: 'rgba(46, 204, 113, 0.25)', // Slightly more vivid for dark mode
+      color: '#2ecc71', // Brighter green text for dark mode
+      fontWeight: 600,
+      padding: '4px 8px',
+      borderRadius: '4px',
+      display: 'inline-block',
+    }
+  },
+  '& .low-stock-cell': {
+    '& .MuiDataGrid-cellContent': {
+      backgroundColor: 'rgba(231, 76, 60, 0.25)', // Slightly more vivid for dark mode
+      color: '#e74c3c', // Brighter red text for dark mode
+      fontWeight: 600,
+      padding: '4px 8px',
+      borderRadius: '4px',
+      display: 'inline-block',
+    }
+  },
+  '& .MuiDataGrid-row:nth-of-type(even)': {
+    backgroundColor: '#282828', // Darker shade for even rows in dark mode
   },
 };
