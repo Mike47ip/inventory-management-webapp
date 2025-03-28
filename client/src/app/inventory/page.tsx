@@ -101,7 +101,7 @@ const Inventory = () => {
     }
   };
 
-  // Restock handler with individual quantities
+  // Restock handler with individual quantities and auto-clear selection
   const handleRestockProducts = async () => {
     try {
       console.group("Restock Process");
@@ -144,6 +144,10 @@ const Inventory = () => {
 
       await refetch();
       console.log("Restock completed successfully");
+      
+      // Clear selection after successful restock
+      setSelectedProductIds([]);
+      
     } catch (error) {
       console.error("Restock failed:", error);
     } finally {
@@ -278,7 +282,7 @@ const Inventory = () => {
           onClick={handleOpenRestockModal}
           disabled={selectedProductIds.length === 0}
         >
-          Restock Selected Products
+          Restock
         </Button>
       </Box>
 
@@ -296,6 +300,7 @@ const Inventory = () => {
           onRowSelectionModelChange={(newSelection) => {
             setSelectedProductIds(newSelection as string[]);
           }}
+          rowSelectionModel={selectedProductIds}
           slots={{ toolbar: GridToolbar }}
           sx={dataGridStyles}
         />
