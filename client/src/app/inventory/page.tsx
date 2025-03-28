@@ -5,6 +5,7 @@ import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { Box, Button, Modal, TextField } from "@mui/material";
 import { Product, useGetProductsQuery, useUpdateProductFieldsMutation } from "@/state/api";
 import { GridToolbar } from "@mui/x-data-grid";
+import { dataGridStyles } from "@/styles/dataGridStyles";
 
 const Inventory = () => {
   // State declarations
@@ -120,6 +121,7 @@ const Inventory = () => {
             setSelectedProductIds(newSelection as string[]);
           }}
           slots={{ toolbar: GridToolbar }}
+          sx={dataGridStyles}
         />
       </Box>
 
