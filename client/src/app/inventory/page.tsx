@@ -490,7 +490,7 @@ const Inventory = () => {
      </ToggleButtonGroup>
 
      <Typography variant="body2" color="text.secondary">
-       <span className="bg-gray-200 hidden md:block rounded-2xl text-[10px] text-blue-500 md:text-base p-3">{filteredProducts.length} products found </span>
+       <span className="hidden md:block rounded-full text-[10px] bg-green-100 text-green-800 md:text-base p-3">{filteredProducts.length} products found </span>
      </Typography>
     </Box>
    </Box>

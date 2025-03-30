@@ -67,7 +67,7 @@ const SalesPage = () => {
           productId: "2",
           name: "Wireless Headphones",
           price: 149.99,
-          stockQuantity: 30,
+          stockQuantity: 30000,
           category: "Electronics",
           image: "/assets/default-image.png",
         },
@@ -75,7 +75,7 @@ const SalesPage = () => {
           productId: "3",
           name: "Designer T-Shirt",
           price: 49.99,
-          stockQuantity: 100,
+          stockQuantity: 100000,
           category: "Clothing",
           image: "/assets/default-image.png",
         },
@@ -164,20 +164,28 @@ const SalesPage = () => {
   };
 
   const updateCartItemQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
+    // Handle invalid input
+    if (isNaN(newQuantity) || newQuantity === 0) {
       removeFromCart(productId);
       return;
     }
 
+    if (newQuantity < 0) {
+      return; // Ignore negative quantities
+    }
+
     const product = products.find((p) => p.productId === productId);
-    if (!product || newQuantity > product.stockQuantity) {
+    if (!product) {
       return;
     }
 
+    // Enforce stock limit
+    const quantity = Math.min(newQuantity, product.stockQuantity);
+    
     setCart(
       cart.map((item) =>
         item.product.productId === productId
-          ? { ...item, quantity: newQuantity }
+          ? { ...item, quantity: quantity }
           : item
       )
     );
@@ -391,7 +399,18 @@ const SalesPage = () => {
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900">{item.product.name}</h4>
                         <p className="text-gray-500 text-sm">
-                          ${item.product.price.toFixed(2)} × {item.quantity}
+                          ${item.product.price.toFixed(2)} × 
+                          <span 
+                            className="cursor-pointer hover:text-blue-600 hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Focus the quantity input field when clicked
+                              const inputEl = document.getElementById(`quantity-${item.product.productId}`);
+                              if (inputEl) inputEl.focus();
+                            }}
+                          >
+                            {item.quantity}
+                          </span>
                         </p>
                       </div>
                       <div className="text-right">
@@ -410,9 +429,24 @@ const SalesPage = () => {
                           >
                             <Minus className="h-4 w-4" />
                           </button>
-                          <span className="mx-2 text-sm w-8 text-center">
-                            {item.quantity}
-                          </span>
+                          <input
+                            id={`quantity-${item.product.productId}`}
+                            type="number"
+                            min="1"
+                            max={item.product.stockQuantity}
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const newQuantity = parseInt(e.target.value, 10);
+                              if (!isNaN(newQuantity)) {
+                                updateCartItemQuantity(
+                                  item.product.productId,
+                                  newQuantity
+                                );
+                              }
+                            }}
+                            className="mx-1 w-full text-center border rounded-md p-1 text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          />
                           <button
                             onClick={() =>
                               updateCartItemQuantity(
