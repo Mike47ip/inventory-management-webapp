@@ -1,5 +1,5 @@
 import React, { ChangeEvent, FormEvent, useState, useRef } from "react";
-import { XCircle, Upload } from "lucide-react";
+import { XCircle, Upload, Plus } from "lucide-react";
 import Image from "next/image";
 
 type ProductFormData = {
@@ -15,9 +15,12 @@ type CreateProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (formData: ProductFormData) => Promise<void>;
+  // Optional prop to allow the parent component to receive the updated categories
+  onCategoriesUpdate?: (categories: string[]) => void;
 };
 
-const categoryOptions = [
+// Initial category options
+const initialCategoryOptions = [
   "Electronics",
   "Clothing",
   "Home & Kitchen",
@@ -35,8 +38,15 @@ const CreateProductModal = ({
   isOpen,
   onClose,
   onCreate,
+  onCategoriesUpdate
 }: CreateProductModalProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // State for category management
+  const [categoryOptions, setCategoryOptions] = useState<string[]>(initialCategoryOptions);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [categoryError, setCategoryError] = useState("");
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
@@ -86,6 +96,40 @@ const CreateProductModal = ({
         ...errors,
         [name]: "",
       });
+    }
+  };
+
+  const handleAddCategory = () => {
+    // Validate new category
+    if (!newCategory.trim()) {
+      setCategoryError("Category name cannot be empty");
+      return;
+    }
+
+    // Check if category already exists (case-insensitive)
+    if (categoryOptions.some(cat => cat.toLowerCase() === newCategory.trim().toLowerCase())) {
+      setCategoryError("This category already exists");
+      return;
+    }
+
+    // Add the new category to options
+    const updatedCategories = [...categoryOptions, newCategory.trim()];
+    setCategoryOptions(updatedCategories);
+    
+    // Set the new category as the selected one
+    setFormData({
+      ...formData,
+      category: newCategory.trim()
+    });
+    
+    // Reset the new category input and hide the add form
+    setNewCategory("");
+    setShowAddCategory(false);
+    setCategoryError("");
+    
+    // Notify parent component if callback exists
+    if (onCategoriesUpdate) {
+      onCategoriesUpdate(updatedCategories);
     }
   };
 
@@ -202,6 +246,9 @@ const CreateProductModal = ({
     });
     setImagePreview(null);
     setErrors({});
+    setShowAddCategory(false);
+    setNewCategory("");
+    setCategoryError("");
     
     onClose();
   };
@@ -291,22 +338,70 @@ const CreateProductModal = ({
                 <label htmlFor="category" className={labelClass}>
                   Category <span className="text-red-500">*</span>
                 </label>
-                <select
-                  id="category"
-                  name="category"
-                  className={`${inputClass} ${errors.category ? 'border-red-500' : ''}`}
-                  value={formData.category}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="" disabled>Select a category</option>
-                  {categoryOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                {errors.category && <p className={errorClass}>{errors.category}</p>}
+                
+                {!showAddCategory ? (
+                  <>
+                    <div className="flex gap-2">
+                      <select
+                        id="category"
+                        name="category"
+                        className={`${inputClass} flex-grow ${errors.category ? 'border-red-500' : ''}`}
+                        value={formData.category}
+                        onChange={handleChange}
+                        required
+                      >
+                        <option value="" disabled>Select a category</option>
+                        {categoryOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                      <button 
+                        type="button"
+                        className="bg-blue-100 text-blue-700 p-2 rounded-md hover:bg-blue-200 flex items-center justify-center"
+                        onClick={() => setShowAddCategory(true)}
+                      >
+                        <Plus size={20} />
+                      </button>
+                    </div>
+                    {errors.category && <p className={errorClass}>{errors.category}</p>}
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter new category"
+                        className={`${inputClass} flex-grow ${categoryError ? 'border-red-500' : ''}`}
+                        value={newCategory}
+                        onChange={(e) => {
+                          setNewCategory(e.target.value);
+                          setCategoryError("");
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="bg-green-600 text-white p-2 rounded-md hover:bg-green-700 flex items-center justify-center"
+                        onClick={handleAddCategory}
+                      >
+                        <Plus size={20} />
+                      </button>
+                      <button
+                        type="button"
+                        className="bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300 flex items-center justify-center"
+                        onClick={() => {
+                          setShowAddCategory(false);
+                          setNewCategory("");
+                          setCategoryError("");
+                        }}
+                      >
+                        <XCircle size={20} />
+                      </button>
+                    </div>
+                    {categoryError && <p className={errorClass}>{categoryError}</p>}
+                  </div>
+                )}
               </div>
 
               {/* Rating */}

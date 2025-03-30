@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { Search, ShoppingCart, X, Trash2, Plus, Minus, CreditCard, Save } from "lucide-react";
+import { Search, ShoppingCart, X, Trash2, Plus, Minus, CreditCard, Save, CheckCircle } from "lucide-react";
 import Header from "@/app/(components)/Header";
 
 // Type definitions
@@ -48,6 +48,17 @@ const SalesPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [note, setNote] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
+  
+  // Toast notification state
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }>({
+    show: false,
+    message: '',
+    type: 'info'
+  });
 
   // Mock loading products - replace with API call later
   useEffect(() => {
@@ -67,7 +78,7 @@ const SalesPage = () => {
           productId: "2",
           name: "Wireless Headphones",
           price: 149.99,
-          stockQuantity: 30000,
+          stockQuantity: 30,
           category: "Electronics",
           image: "/assets/default-image.png",
         },
@@ -75,7 +86,7 @@ const SalesPage = () => {
           productId: "3",
           name: "Designer T-Shirt",
           price: 49.99,
-          stockQuantity: 100000,
+          stockQuantity: 100,
           category: "Clothing",
           image: "/assets/default-image.png",
         },
@@ -222,6 +233,18 @@ const SalesPage = () => {
       paymentMethod,
       note,
     });
+    
+    // Show success notification
+    setNotification({
+      show: true,
+      message: 'Sale processed successfully!',
+      type: 'success'
+    });
+    
+    // Auto-hide notification after 5 seconds
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, show: false }));
+    }, 5000);
 
     // Reset state after sale
     setCart([]);
@@ -229,14 +252,39 @@ const SalesPage = () => {
     setNote("");
     setDiscountPercent(0);
     setPaymentMethod("cash");
+    setSearchTerm("");
+    setCategoryFilter("");
   };
 
   // Check if we can proceed with sale
   const canProcessSale = cart.length > 0;
 
   return (
-    <div className="flex flex-col h-full min-h-screen bg-gray-50">
+    <div className="flex flex-col h-full min-h-screen bg-gray-50 relative">
       <Header name="Sales" />
+      
+      {/* Toast Notification */}
+      {notification.show && (
+        <div 
+          className={`fixed right-4 top-20 z-50 flex items-center p-4 rounded-lg shadow-lg transform transition-transform duration-500 ease-in-out translate-x-0 ${
+            notification.type === 'success' ? 'bg-green-100 text-green-800 border-l-4 border-green-500' :
+            notification.type === 'error' ? 'bg-red-100 text-red-800 border-l-4 border-red-500' :
+            'bg-blue-100 text-blue-800 border-l-4 border-blue-500'
+          }`}
+        >
+          <div className="flex items-center">
+            {notification.type === 'success' && <CheckCircle className="h-5 w-5 mr-2" />}
+            {notification.type === 'error' && <X className="h-5 w-5 mr-2" />}
+            <p className="font-medium">{notification.message}</p>
+          </div>
+          <button 
+            className="ml-auto pl-3" 
+            onClick={() => setNotification(prev => ({ ...prev, show: false }))}
+          >
+            <X className="h-4 w-4 text-gray-500" />
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row flex-1 gap-6 p-6">
         {/* Left side - Products */}
@@ -278,38 +326,50 @@ const SalesPage = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.productId}
-                  className="border rounded-lg p-3 flex flex-col hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => addToCart(product)}
-                >
-                  <div className="h-32 relative mb-2">
-                    <Image
-                      src={product.image || "/assets/default-image.png"}
-                      alt={product.name}
-                      fill
-                      className="object-contain"
-                    />
+                          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredProducts.map((product) => {
+                // Check if this product is in the cart
+                const isInCart = cart.some(item => item.product.productId === product.productId);
+                
+                return (
+                  <div
+                    key={product.productId}
+                    className={`border rounded-lg p-3 flex flex-col hover:shadow-md transition-all cursor-pointer ${
+                      isInCart ? "border-blue-500 border-2 shadow-md" : "border-gray-200"
+                    }`}
+                    onClick={() => addToCart(product)}
+                  >
+                    {isInCart && (
+                      <div className="absolute top-0 right-0 m-2 bg-blue-500 text-white text-xs rounded-full px-2 py-1">
+                        In Cart
+                      </div>
+                    )}
+                    <div className="h-32 relative mb-2">
+                      <Image
+                        src={product.image || "/assets/default-image.png"}
+                        alt={product.name}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                    <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
+                    <div className="mt-1 flex justify-between items-center">
+                      <span className="text-sm font-semibold text-gray-900">
+                        ${product.price.toFixed(2)}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        product.stockQuantity > 0 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-red-100 text-red-800"
+                      }`}>
+                        {product.stockQuantity > 0 
+                          ? `Stock: ${product.stockQuantity}` 
+                          : "Out of stock"}
+                      </span>
+                    </div>
                   </div>
-                  <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
-                  <div className="mt-1 flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-900">
-                      ${product.price.toFixed(2)}
-                    </span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      product.stockQuantity > 0 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-red-100 text-red-800"
-                    }`}>
-                      {product.stockQuantity > 0 
-                        ? `Stock: ${product.stockQuantity}` 
-                        : "Out of stock"}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -444,7 +504,7 @@ const SalesPage = () => {
                                 );
                               }
                             }}
-                            className="mx-1 w-full text-center border rounded-md p-1 text-sm"
+                            className="mx-1 w-12 text-center border rounded-md p-1 text-sm"
                             onClick={(e) => e.stopPropagation()}
                           />
                           <button
