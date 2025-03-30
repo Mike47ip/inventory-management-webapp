@@ -464,7 +464,7 @@ const Inventory = () => {
       onClick={handleOpenRestockModal}
       disabled={selectedProductIds.length === 0}
      >
-      Restock Selected Products
+      Restock <span className="hidden md:block"> Selected Products</span>
      </Button>
     </Box>
 
@@ -479,13 +479,13 @@ const Inventory = () => {
       size="small"
      >
       <ToggleButton value="all" aria-label="all products">
-       All Products
+       <span className="text-[10px] md:text-base">All Products </span> 
       </ToggleButton>
       <ToggleButton value="featured" aria-label="featured products">
-       Featured ({featuredCount})
+      <span className="text-[10px] md:text-base">Featured ({featuredCount}) </span>  
       </ToggleButton>
       <ToggleButton value="regular" aria-label="regular products">
-       Regular
+      <span className="text-[10px] md:text-base">Regular </span> 
       </ToggleButton>
      </ToggleButtonGroup>
 
