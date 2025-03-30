@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { DataGrid, GridColDef, GridRenderCellParams,  } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
  Box,
  Button,
@@ -16,7 +16,6 @@ import {
  Chip,
  Tooltip,
  Paper,
- Grid,
  Rating as MuiRating,
  ToggleButton,
  ToggleButtonGroup,
@@ -285,7 +284,6 @@ const toggleFeatured = useCallback((productId: string) => {
       </Box>
      );
     },
-
     getValue: (params: { id: string | number; row: any }) => {
       const id = params.id?.toString() || '';
       return featuredProducts.has(id) ? 1 : 0;
@@ -333,31 +331,30 @@ const toggleFeatured = useCallback((productId: string) => {
     headerAlign: "left",
     valueGetter: (value, row) => `$${row.price}`,
    },
-   // Add this to your columns array, right after the price field:
-
-{
-  field: "category",
-  headerName: "Category",
-  flex: 0.4,
-  renderCell: (params) => {
-    const category = params.value || "Uncategorized";
-    
-    return (
-      <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
-        <Chip 
-          label={category} 
-          size="small"
-          variant="outlined"
-          sx={{ 
-            borderRadius: '4px',
-            bgcolor: isDarkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
-            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-          }}
-        />
-      </div>
-    );
+   // Category column
+   {
+    field: "category",
+    headerName: "Category",
+    flex: 0.4,
+    renderCell: (params) => {
+      const category = params.value || "Uncategorized";
+      
+      return (
+        <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <Chip 
+            label={category} 
+            size="small"
+            variant="outlined"
+            sx={{ 
+              borderRadius: '4px',
+              bgcolor: isDarkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
+              borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+            }}
+          />
+        </div>
+      );
+    },
   },
-},
    {
     field: "rating",
     headerName: "Rating",
@@ -772,145 +769,145 @@ const toggleFeatured = useCallback((productId: string) => {
        </Typography>
 
        <Paper elevation={0} sx={{ mt: 2, p: 2, bgcolor: "background.default" }}>
-        <Grid container spacing={3}>
-         {/* Product Image */}
-         <Grid
-          item
-          xs={12}
-          md={5}
-          sx={{
-           display: "flex",
-           justifyContent: "center",
-           alignItems: "flex-start",
-           m: 2, // Adds margin around the Grid (change the value as needed)
-          }}
-         >
-          <Image
-           src={
-            selectedViewProduct.image
-             ? `http://localhost:8000${selectedViewProduct.image}`
-             : "/assets/default-image.png"
-           }
-           alt={selectedViewProduct.name}
-           width={200}
-           height={200}
-           style={{
-            objectFit: "contain",
-            borderRadius: "8px",
-            maxWidth: "100%",
-            height: "auto",
-           }}
-           onError={(e) => {
-            (e.target as HTMLImageElement).src = "/assets/default-image.png";
-           }}
-          />
-         </Grid>
-
-         {/* Product Details */}
-         <Grid component="div" item xs={12} md={7}>
-          <Typography
-           variant="h6"
-           component="h3"
-           gutterBottom
-           fontWeight="bold"
+        {/* Replace Grid with Box layout */}
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
+          {/* Product Image */}
+          <Box
+            sx={{
+              flex: { md: '0 0 40%' },
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              m: 2,
+            }}
           >
-           {selectedViewProduct.name}
-          </Typography>
-
-          <Box sx={{ mt: 2, mb: 3 }}>
-           <MuiRating
-            value={selectedViewProduct.rating || 0}
-            precision={0.5}
-            readOnly
-           />
-           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Rating: {selectedViewProduct.rating || 0} / 5
-           </Typography>
-          </Box>
-
-          <Typography
-           variant="h6"
-           color="primary"
-           fontWeight="medium"
-           sx={{ mb: 2 }}
-          >
-           ${selectedViewProduct.price.toFixed(2)}
-          </Typography>
-
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-           <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary">
-             Category
-            </Typography>
-            <Typography variant="body1">
-             {selectedViewProduct.category || "Uncategorized"}
-            </Typography>
-           </Grid>
-           <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary">
-             Stock Quantity
-            </Typography>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-             <Typography
-              variant="body1"
-              sx={{
-               color:
-                selectedViewProduct.stockQuantity >= 100
-                 ? "success.main"
-                 : "error.main",
-               fontWeight: "medium",
+            <Image
+              src={
+                selectedViewProduct.image
+                ? `http://localhost:8000${selectedViewProduct.image}`
+                : "/assets/default-image.png"
+              }
+              alt={selectedViewProduct.name}
+              width={200}
+              height={200}
+              style={{
+                objectFit: "contain",
+                borderRadius: "8px",
+                maxWidth: "100%",
+                height: "auto",
               }}
-             >
-              {selectedViewProduct.stockQuantity}
-             </Typography>
-             <Chip
-              label={
-               selectedViewProduct.stockQuantity >= 100
-                ? "In Stock"
-                : "Low Stock"
-              }
-              color={
-               selectedViewProduct.stockQuantity >= 100 ? "success" : "error"
-              }
-              size="small"
-              sx={{ ml: 1 }}
-             />
-            </Box>
-           </Grid>
-          </Grid>
-
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-           Product ID
-          </Typography>
-          <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
-           {selectedViewProduct.productId}
-          </Typography>
-
-          {/* Featured toggle in product view */}
-          <Box sx={{ mt: 3, display: "flex", alignItems: "center" }}>
-           <Typography variant="body2" color="text.secondary">
-            Featured Status:
-           </Typography>
-           <Button
-            startIcon={
-             featuredProducts.has(selectedViewProduct.productId) ? (
-              <Star sx={{ color: "gold" }} />
-             ) : (
-              <StarBorder />
-             )
-            }
-            variant="outlined"
-            size="small"
-            onClick={() => toggleFeatured(selectedViewProduct.productId)}
-            sx={{ ml: 2 }}
-           >
-            {featuredProducts.has(selectedViewProduct.productId)
-             ? "Remove Featured"
-             : "Mark as Featured"}
-           </Button>
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/assets/default-image.png";
+              }}
+            />
           </Box>
-         </Grid>
-        </Grid>
+
+          {/* Product Details */}
+          <Box sx={{ flex: '1 1 auto' }}>
+            <Typography
+              variant="h6"
+              component="h3"
+              gutterBottom
+              fontWeight="bold"
+            >
+              {selectedViewProduct.name}
+            </Typography>
+
+            <Box sx={{ mt: 2, mb: 3 }}>
+              <MuiRating
+                value={selectedViewProduct.rating || 0}
+                precision={0.5}
+                readOnly
+              />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Rating: {selectedViewProduct.rating || 0} / 5
+              </Typography>
+            </Box>
+
+            <Typography
+              variant="h6"
+              color="primary"
+              fontWeight="medium"
+              sx={{ mb: 2 }}
+            >
+              ${selectedViewProduct.price.toFixed(2)}
+            </Typography>
+
+            {/* Category and Stock Side by Side */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', mb: 2, gap: 2 }}>
+              <Box sx={{ flex: '1 1 40%', minWidth: '120px' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Category
+                </Typography>
+                <Typography variant="body1">
+                  {selectedViewProduct.category || "Uncategorized"}
+                </Typography>
+              </Box>
+              <Box sx={{ flex: '1 1 40%', minWidth: '120px' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Stock Quantity
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color:
+                        selectedViewProduct.stockQuantity >= 100
+                          ? "success.main"
+                          : "error.main",
+                      fontWeight: "medium",
+                    }}
+                  >
+                    {selectedViewProduct.stockQuantity}
+                  </Typography>
+                  <Chip
+                    label={
+                      selectedViewProduct.stockQuantity >= 100
+                        ? "In Stock"
+                        : "Low Stock"
+                    }
+                    color={
+                      selectedViewProduct.stockQuantity >= 100 ? "success" : "error"
+                    }
+                    size="small"
+                    sx={{ ml: 1 }}
+                  />
+                </Box>
+              </Box>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Product ID
+            </Typography>
+            <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
+              {selectedViewProduct.productId}
+            </Typography>
+
+            {/* Featured toggle in product view */}
+            <Box sx={{ mt: 3, display: "flex", alignItems: "center" }}>
+              <Typography variant="body2" color="text.secondary">
+                Featured Status:
+              </Typography>
+              <Button
+                startIcon={
+                  featuredProducts.has(selectedViewProduct.productId) ? (
+                    <Star sx={{ color: "gold" }} />
+                  ) : (
+                    <StarBorder />
+                  )
+                }
+                variant="outlined"
+                size="small"
+                onClick={() => toggleFeatured(selectedViewProduct.productId)}
+                sx={{ ml: 2 }}
+              >
+                {featuredProducts.has(selectedViewProduct.productId)
+                  ? "Remove Featured"
+                  : "Mark as Featured"}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
        </Paper>
 
        <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
