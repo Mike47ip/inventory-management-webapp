@@ -331,6 +331,31 @@ const Inventory = () => {
     headerAlign: "left",
     valueGetter: (value, row) => `$${row.price}`,
    },
+   // Add this to your columns array, right after the price field:
+
+{
+  field: "category",
+  headerName: "Category",
+  flex: 0.4,
+  renderCell: (params) => {
+    const category = params.value || "Uncategorized";
+    
+    return (
+      <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+        <Chip 
+          label={category} 
+          size="small"
+          variant="outlined"
+          sx={{ 
+            borderRadius: '4px',
+            bgcolor: isDarkMode ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.05)',
+            borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+          }}
+        />
+      </div>
+    );
+  },
+},
    {
     field: "rating",
     headerName: "Rating",
@@ -405,7 +430,7 @@ const Inventory = () => {
         sx={{
          color: "primary.main",
          "&:hover": {
-          bgcolor: "rgba(25, 118, 210, 0.08)",
+          bgcolor: "rgba(40, 100, 150, 0.08)",
          },
         }}
        >

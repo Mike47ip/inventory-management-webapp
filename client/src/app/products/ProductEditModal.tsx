@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Modal, Box, TextField, Button, Typography } from "@mui/material";
+import { Modal, Box, TextField, Button, Typography, MenuItem, FormControl, InputLabel, Select, Chip } from "@mui/material";
 import Image from "next/image";
+import { useCategories } from "@/app/(context)/CategoryContext";
+import { Add as AddIcon } from "@mui/icons-material";
 
 // Custom type for update parameters
 type UpdateProductParams = {
@@ -30,12 +32,20 @@ const ProductEditModal = ({
  product: Product | null;
  onUpdate: (params: UpdateProductParams) => Promise<void>; // Explicitly typed
 }) => {
+ // Get categories from context
+ const { categories, addCategory } = useCategories();
+
  // State for edited product details
  const [editedProduct, setEditedProduct] = useState<Partial<Product>>({});
 
  // State for image handling
  const [imageFile, setImageFile] = useState<File | null>(null);
  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+ // State for new category handling
+ const [showAddCategory, setShowAddCategory] = useState(false);
+ const [newCategory, setNewCategory] = useState("");
+ const [categoryError, setCategoryError] = useState("");
 
  // Initialize form when product changes
  useEffect(() => {
@@ -54,6 +64,11 @@ const ProductEditModal = ({
 
    // Reset image file
    setImageFile(null);
+   
+   // Reset category states
+   setShowAddCategory(false);
+   setNewCategory("");
+   setCategoryError("");
   }
  }, [product, open]);
 
@@ -78,6 +93,50 @@ const ProductEditModal = ({
       : Number(value)
     : value,
   }));
+ };
+
+ // Handle select changes
+ const handleSelectChange = (e: any) => {
+  const { name, value } = e.target;
+  
+  setEditedProduct((prev) => ({
+   ...prev,
+   [name]: value,
+  }));
+ };
+
+ // Handle new category addition
+ const handleAddNewCategory = () => {
+  // Validate new category
+  if (!newCategory.trim()) {
+   setCategoryError("Category name cannot be empty");
+   return;
+  }
+
+  // Check if category already exists (case-insensitive)
+  if (categories.some(cat => cat.toLowerCase() === newCategory.trim().toLowerCase())) {
+   setCategoryError("This category already exists");
+   return;
+  }
+
+  try {
+   // Add the new category using the context
+   addCategory(newCategory.trim());
+   
+   // Set the new category as the selected one
+   setEditedProduct(prev => ({
+    ...prev,
+    category: newCategory.trim()
+   }));
+   
+   // Reset the new category input and hide the add form
+   setNewCategory("");
+   setShowAddCategory(false);
+   setCategoryError("");
+  } catch (error) {
+   console.error("Error adding category:", error);
+   setCategoryError("Failed to add category");
+  }
  };
 
  // Handle image file selection
@@ -221,14 +280,78 @@ const ProductEditModal = ({
       }}
      />
 
-     <TextField
-      fullWidth
-      label="Category"
-      name="category"
-      value={editedProduct.category || ""}
-      onChange={handleChange}
-      variant="outlined"
-     />
+     {/* Category Selection with Add New Category Option */}
+     {!showAddCategory ? (
+       <FormControl fullWidth>
+         <InputLabel id="category-select-label">Category</InputLabel>
+         <Select
+           labelId="category-select-label"
+           id="category-select"
+           name="category"
+           value={editedProduct.category || ""}
+           label="Category"
+           onChange={handleSelectChange}
+           endAdornment={
+             <Button 
+               size="small"
+               sx={{ minWidth: 'auto', mr: 2 }}
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setShowAddCategory(true);
+               }}
+             >
+               <AddIcon fontSize="small" />
+             </Button>
+           }
+         >
+           <MenuItem value="">
+             <em>None</em>
+           </MenuItem>
+           {categories.map((category) => (
+             <MenuItem key={category} value={category}>
+               {category}
+             </MenuItem>
+           ))}
+         </Select>
+       </FormControl>
+     ) : (
+       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+         <Typography variant="body2">Add New Category</Typography>
+         <Box sx={{ display: 'flex', gap: 1 }}>
+           <TextField
+             fullWidth
+             size="small"
+             placeholder="Enter new category name"
+             value={newCategory}
+             onChange={(e) => {
+               setNewCategory(e.target.value);
+               setCategoryError("");
+             }}
+             error={!!categoryError}
+             helperText={categoryError}
+           />
+           <Button
+             variant="contained"
+             color="primary"
+             size="small"
+             onClick={handleAddNewCategory}
+           >
+             Add
+           </Button>
+           <Button
+             variant="outlined"
+             size="small"
+             onClick={() => {
+               setShowAddCategory(false);
+               setNewCategory("");
+               setCategoryError("");
+             }}
+           >
+             Cancel
+           </Button>
+         </Box>
+       </Box>
+     )}
 
      <TextField
       fullWidth
