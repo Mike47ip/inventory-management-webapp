@@ -1,6 +1,7 @@
 import React, { ChangeEvent, FormEvent, useState, useRef } from "react";
 import { XCircle, Upload, Plus } from "lucide-react";
 import Image from "next/image";
+import { useCategories } from "../(context)/CategoryContext";
 
 type ProductFormData = {
   name: string;
@@ -15,35 +16,20 @@ type CreateProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (formData: ProductFormData) => Promise<void>;
-  // Optional prop to allow the parent component to receive the updated categories
-  onCategoriesUpdate?: (categories: string[]) => void;
 };
-
-// Initial category options
-const initialCategoryOptions = [
-  "Electronics",
-  "Clothing",
-  "Home & Kitchen",
-  "Beauty & Personal Care",
-  "Sports & Outdoors",
-  "Books",
-  "Toys & Games",
-  "Health & Wellness",
-  "Automotive",
-  "Office Supplies",
-  "Other"
-];
 
 const CreateProductModal = ({
   isOpen,
   onClose,
-  onCreate,
-  onCategoriesUpdate
+  onCreate
 }: CreateProductModalProps) => {
+
+  console.log("Modal rendering, isOpen:", isOpen);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // State for category management
-  const [categoryOptions, setCategoryOptions] = useState<string[]>(initialCategoryOptions);
+  // Use the category context instead of local state
+  const { categories, addCategory } = useCategories();
+  console.log("Categories from context:", categories);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategory, setNewCategory] = useState("");
   const [categoryError, setCategoryError] = useState("");
@@ -63,7 +49,7 @@ const CreateProductModal = ({
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+    console.log(`Form field change - ${name}:`, value);
     if (name === 'price') {
       const numValue = parseFloat(value);
       setFormData({
@@ -100,6 +86,7 @@ const CreateProductModal = ({
   };
 
   const handleAddCategory = () => {
+    console.log("Adding new category:", newCategory);
     // Validate new category
     if (!newCategory.trim()) {
       setCategoryError("Category name cannot be empty");
@@ -107,14 +94,15 @@ const CreateProductModal = ({
     }
 
     // Check if category already exists (case-insensitive)
-    if (categoryOptions.some(cat => cat.toLowerCase() === newCategory.trim().toLowerCase())) {
+    if (categories.some(cat => cat.toLowerCase() === newCategory.trim().toLowerCase())) {
       setCategoryError("This category already exists");
+      console.log("Category error: already exists");
       return;
     }
 
-    // Add the new category to options
-    const updatedCategories = [...categoryOptions, newCategory.trim()];
-    setCategoryOptions(updatedCategories);
+    // Add the new category using the context
+    addCategory(newCategory.trim());
+    console.log("Category added successfully");
     
     // Set the new category as the selected one
     setFormData({
@@ -126,11 +114,6 @@ const CreateProductModal = ({
     setNewCategory("");
     setShowAddCategory(false);
     setCategoryError("");
-    
-    // Notify parent component if callback exists
-    if (onCategoriesUpdate) {
-      onCategoriesUpdate(updatedCategories);
-    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,7 +334,7 @@ const CreateProductModal = ({
                         required
                       >
                         <option value="" disabled>Select a category</option>
-                        {categoryOptions.map((option) => (
+                        {categories.map((option) => (
                           <option key={option} value={option}>
                             {option}
                           </option>

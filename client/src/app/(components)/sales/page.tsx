@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Search, ShoppingCart, X, Trash2, Plus, Minus, CreditCard, Save, CheckCircle } from "lucide-react";
 import Header from "@/app/(components)/Header";
+import { useCategories } from "@/app/(context)/CategoryContext";
 
 // Type definitions
 type Product = {
@@ -35,6 +36,9 @@ const mockCustomers: Customer[] = [
 ];
 
 const SalesPage = () => {
+  // Get categories from context
+  const { categories } = useCategories();
+
   // State declarations
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -130,12 +134,6 @@ const SalesPage = () => {
 
     setFilteredProducts(result);
   }, [searchTerm, categoryFilter, products]);
-
-  // Get unique categories from products
-  const categories = useMemo(() => {
-    const cats = products.map((product) => product.category).filter(Boolean) as string[];
-    return ["", ...Array.from(new Set(cats))];
-  }, [products]);
 
   // Filter customers based on search
   const filteredCustomers = useMemo(() => {
@@ -310,13 +308,11 @@ const SalesPage = () => {
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
               <option value="">All Categories</option>
-              {categories.map((category) =>
-                category ? (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ) : null
-              )}
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -326,7 +322,7 @@ const SalesPage = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : (
-                          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredProducts.map((product) => {
                 // Check if this product is in the cart
                 const isInCart = cart.some(item => item.product.productId === product.productId);
