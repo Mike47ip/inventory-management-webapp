@@ -479,18 +479,18 @@ const Inventory = () => {
       size="small"
      >
       <ToggleButton value="all" aria-label="all products">
-       <span className="text-[10px] md:text-base">All Products </span> 
+       <span className="text-[10px] font-medium md:text-base">All Products </span> 
       </ToggleButton>
       <ToggleButton value="featured" aria-label="featured products">
-      <span className="text-[10px] md:text-base">Featured ({featuredCount}) </span>  
+      <span className="text-[10px] font-medium md:text-base">Featured ({featuredCount}) </span>  
       </ToggleButton>
       <ToggleButton value="regular" aria-label="regular products">
-      <span className="text-[10px] md:text-base">Regular </span> 
+      <span className="text-[10px] font-medium md:text-base">Regular </span> 
       </ToggleButton>
      </ToggleButtonGroup>
 
      <Typography variant="body2" color="text.secondary">
-      {filteredProducts.length} products found
+       <span className="bg-gray-200 hidden md:block rounded-2xl text-[10px] text-blue-500 md:text-base p-3">{filteredProducts.length} products found </span>
      </Typography>
     </Box>
    </Box>
