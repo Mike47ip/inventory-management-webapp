@@ -416,7 +416,7 @@ const Inventory = () => {
     ),
    },
   ],
-  [isDarkMode, featuredProducts] // Add featuredProducts as a dependency
+  [isDarkMode, featuredProducts, renderStarRating, toggleFeatured ] // Add featuredProducts as a dependency
  );
 
  // Filter products based on search query and featured status
@@ -451,7 +451,7 @@ const Inventory = () => {
  return (
   <Box m="1.5rem 2.5rem">
    <Box display="flex" flexDirection="column" gap={2}>
-    <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Box className="flex justify-between items-center gap-4">
      <TextField
       label="Search Inventory"
       variant="outlined"
@@ -469,8 +469,9 @@ const Inventory = () => {
     </Box>
 
     {/* Featured filter toggle */}
-    <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Box display="flex"  className="flex justify-between gap-3 items-center">
      <ToggleButtonGroup
+     className="flex justify-between gap-3 items-center"
       value={filterMode}
       exclusive
       onChange={handleFilterChange}
@@ -779,7 +780,7 @@ const Inventory = () => {
          </Grid>
 
          {/* Product Details */}
-         <Grid item xs={12} md={7}>
+         <Grid component="div" item xs={12} md={7}>
           <Typography
            variant="h6"
            component="h3"
