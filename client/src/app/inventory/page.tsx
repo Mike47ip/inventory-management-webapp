@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import React, { useState, useMemo, useCallback } from "react";
+import { DataGrid, GridColDef, GridRenderCellParams,  } from "@mui/x-data-grid";
 import {
  Box,
  Button,
@@ -68,16 +68,17 @@ const Inventory = () => {
  const { data: products = [], isLoading, refetch } = useGetProductsQuery();
  const [updateProductFields] = useUpdateProductFieldsMutation();
 
- // Toggle featured status for a product
- const toggleFeatured = (productId: string) => {
+ 
+// Replace your current toggleFeatured function with this:
+const toggleFeatured = useCallback((productId: string) => {
   const newFeaturedProducts = new Set(featuredProducts);
   if (newFeaturedProducts.has(productId)) {
-   newFeaturedProducts.delete(productId);
+    newFeaturedProducts.delete(productId);
   } else {
-   newFeaturedProducts.add(productId);
+    newFeaturedProducts.add(productId);
   }
   setFeaturedProducts(newFeaturedProducts);
- };
+}, [featuredProducts]);
 
  // Function to get display list of selected products
  const getSelectedProductsInfo = () => {
@@ -284,9 +285,10 @@ const Inventory = () => {
       </Box>
      );
     },
-    // Another approach:
-    getValue: (params) => {
-     return featuredProducts.has(params.id.toString()) ? 1 : 0;
+
+    getValue: (params: { id: string | number; row: any }) => {
+      const id = params.id?.toString() || '';
+      return featuredProducts.has(id) ? 1 : 0;
     },
    },
    {
