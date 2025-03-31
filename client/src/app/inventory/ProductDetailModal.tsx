@@ -151,7 +151,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       variant="body1"
                       sx={{
                         color:
-                          product.stockQuantity >= 100
+                          product.stockQuantity >= 50
                             ? "success.main"
                             : "error.main",
                         fontWeight: "medium",
@@ -161,7 +161,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     </Typography>
                     <Chip
                       label={
-                        product.stockQuantity >= 100
+                        product.stockQuantity >= 50
                           ? "In Stock"
                           : "Low Stock"
                       }
