@@ -365,16 +365,23 @@ const SalesPage = () => {
             {formatPrice(product)}
            </span>
            <span
-            className={`text-xs px-2 py-1 rounded-full self-start flex flex-col ${
+            className={`text-xs px-2 py-1 rounded-full self-start flex justify-center items-end flex-col ${
              product.stockQuantity > 0
-              ? "bg-green-100 text-green-800"
+              ? "text-green-800 font-medium"
               : "bg-red-100 text-red-800"
             }`}
            >
             <span>Stock:</span>
             <span>
-             {product.stockQuantity > 0 ? formatStock(product) : "Out of stock"}
-            </span>
+    {product.stockQuantity > 0 
+      ? (
+        <>
+          <span className="font-bold text-sm">{product.stockQuantity}</span>
+          <span> {product.stockUnit || 'Units'}</span>
+        </>
+      ) 
+      : "Out of stock"}
+  </span>
            </span>
           </div>
          </div>
