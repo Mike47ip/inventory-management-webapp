@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useState, useRef } from "react";
+import React, { ChangeEvent, FormEvent, useState, useRef, useEffect } from "react";
 import { XCircle, Upload, Plus } from "lucide-react";
 import Image from "next/image";
 import { useCategories } from "../(context)/CategoryContext";
@@ -6,22 +6,62 @@ import { useCategories } from "../(context)/CategoryContext";
 type ProductFormData = {
   name: string;
   price: number;
+  currency: string; // Added currency field
   stockQuantity: number;
+  stockUnit: string;
   rating: number;
   category: string;
   image: File | null;
 };
 
+
+// Updated type definition
 type CreateProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  onCreateProduct: (product: ProductFormData) => void; // New prop added
   onCreate: (formData: ProductFormData) => Promise<void>;
+};
+
+// Initial stock unit options
+const initialStockUnits = [
+  "Units",
+  "Pieces",
+  "Kg",
+  "g",
+  "L",
+  "mL",
+  "Boxes",
+  "Pairs"
+];
+
+// Initial currency options
+const initialCurrencies = [
+  "GHC",
+  "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "CAD",
+  "AUD"
+];
+
+// Currency symbol map
+const currencySymbols: { [key: string]: string } = {
+  'GHC': '₵',
+  'USD': '$',
+  'EUR': '€',
+  'GBP': '£',
+  'JPY': '¥',
+  'CAD': 'C$',
+  'AUD': 'A$',
 };
 
 const CreateProductModal = ({
   isOpen,
   onClose,
-  onCreate
+  onCreate,
+  onCreateProduct // Add this line
 }: CreateProductModalProps) => {
 
   console.log("Modal rendering, isOpen:", isOpen);
@@ -34,10 +74,24 @@ const CreateProductModal = ({
   const [newCategory, setNewCategory] = useState("");
   const [categoryError, setCategoryError] = useState("");
   
+  // Stock unit state
+  const [stockUnits, setStockUnits] = useState<string[]>(initialStockUnits);
+  const [showAddStockUnit, setShowAddStockUnit] = useState(false);
+  const [newStockUnit, setNewStockUnit] = useState("");
+  const [stockUnitError, setStockUnitError] = useState("");
+  
+  // Currency state
+  const [currencies, setCurrencies] = useState<string[]>(initialCurrencies);
+  const [showAddCurrency, setShowAddCurrency] = useState(false);
+  const [newCurrency, setNewCurrency] = useState("");
+  const [currencyError, setCurrencyError] = useState("");
+
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     price: 0,
+    currency: "GHC", // Default to GHC instead of USD
     stockQuantity: 0,
+    stockUnit: "Units", // Default stock unit
     rating: 0,
     category: "",
     image: null,
@@ -46,6 +100,11 @@ const CreateProductModal = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Log form data changes
+  useEffect(() => {
+    console.log("Current form data:", formData);
+  }, [formData]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -68,6 +127,13 @@ const CreateProductModal = ({
       setFormData({
         ...formData,
         [name]: isNaN(numValue) ? 0 : numValue,
+      });
+    } else if (name === 'currency') {
+      // Log when currency changes
+      console.log(`Currency changed to: ${value}`);
+      setFormData({
+        ...formData,
+        [name]: value,
       });
     } else {
       setFormData({
@@ -114,6 +180,70 @@ const CreateProductModal = ({
     setNewCategory("");
     setShowAddCategory(false);
     setCategoryError("");
+  };
+
+  const handleAddStockUnit = () => {
+    console.log("Adding new stock unit:", newStockUnit);
+    // Validate new stock unit
+    if (!newStockUnit.trim()) {
+      setStockUnitError("Unit name cannot be empty");
+      return;
+    }
+
+    // Check if stock unit already exists (case-insensitive)
+    if (stockUnits.some(unit => unit.toLowerCase() === newStockUnit.trim().toLowerCase())) {
+      setStockUnitError("This unit already exists");
+      console.log("Stock unit error: already exists");
+      return;
+    }
+
+    // Add the new stock unit to the list
+    const updatedUnits = [...stockUnits, newStockUnit.trim()];
+    setStockUnits(updatedUnits);
+    console.log("Stock unit added successfully");
+    
+    // Set the new stock unit as the selected one
+    setFormData({
+      ...formData,
+      stockUnit: newStockUnit.trim()
+    });
+    
+    // Reset the new stock unit input and hide the add form
+    setNewStockUnit("");
+    setShowAddStockUnit(false);
+    setStockUnitError("");
+  };
+
+  const handleAddCurrency = () => {
+    console.log("Adding new currency:", newCurrency);
+    // Validate new currency
+    if (!newCurrency.trim()) {
+      setCurrencyError("Currency code cannot be empty");
+      return;
+    }
+
+    // Check if currency already exists (case-insensitive)
+    if (currencies.some(curr => curr.toLowerCase() === newCurrency.trim().toLowerCase())) {
+      setCurrencyError("This currency already exists");
+      console.log("Currency error: already exists");
+      return;
+    }
+
+    // Add the new currency to the list
+    const updatedCurrencies = [...currencies, newCurrency.trim().toUpperCase()];
+    setCurrencies(updatedCurrencies);
+    console.log("Currency added successfully");
+    
+    // Set the new currency as the selected one
+    setFormData({
+      ...formData,
+      currency: newCurrency.trim().toUpperCase()
+    });
+    
+    // Reset the new currency input and hide the add form
+    setNewCurrency("");
+    setShowAddCurrency(false);
+    setCurrencyError("");
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,6 +304,10 @@ const CreateProductModal = ({
     if (!formData.category) {
       newErrors.category = "Please select a category";
     }
+
+    if (!formData.currency) {
+      newErrors.currency = "Please select a currency";
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -189,13 +323,24 @@ const CreateProductModal = ({
     setIsSubmitting(true);
     
     try {
+      console.log("Submitting form with data:", formData);
+      // Log currency specifically to check its value
+      console.log("Currency being submitted:", formData.currency);
+      
       await onCreate(formData);
+
+      // You can now call onCreateProduct if you want to update the local state
+      if (onCreateProduct) {
+        onCreateProduct(formData);
+      }
       
       // Reset form
       setFormData({
         name: "",
         price: 0,
+        currency: "GHC",
         stockQuantity: 0,
+        stockUnit: "Units",
         rating: 0,
         category: "",
         image: null,
@@ -222,7 +367,9 @@ const CreateProductModal = ({
     setFormData({
       name: "",
       price: 0,
+      currency: "GHC",
       stockQuantity: 0,
+      stockUnit: "Units",
       rating: 0,
       category: "",
       image: null,
@@ -232,6 +379,12 @@ const CreateProductModal = ({
     setShowAddCategory(false);
     setNewCategory("");
     setCategoryError("");
+    setShowAddStockUnit(false);
+    setNewStockUnit("");
+    setStockUnitError("");
+    setShowAddCurrency(false);
+    setNewCurrency("");
+    setCurrencyError("");
     
     onClose();
   };
@@ -243,6 +396,11 @@ const CreateProductModal = ({
   const inputClass = "w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500";
   const errorClass = "text-red-500 text-xs mt-1";
   const helpTextClass = "text-gray-500 text-xs mt-1";
+
+  // Get currency symbol for current currency
+  const getCurrencySymbol = (currencyCode: string) => {
+    return currencySymbols[currencyCode] || currencyCode;
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -273,15 +431,16 @@ const CreateProductModal = ({
                 {errors.name && <p className={errorClass}>{errors.name}</p>}
               </div>
 
-              {/* Price and Stock Quantity */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+              {/* Price and Currency - Changed to row layout */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                {/* Price */}
+                <div className="flex-1">
                   <label htmlFor="price" className={labelClass}>
                     Price <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                      $
+                      {getCurrencySymbol(formData.currency)}
                     </span>
                     <input
                       type="number"
@@ -298,10 +457,78 @@ const CreateProductModal = ({
                   {errors.price && <p className={errorClass}>{errors.price}</p>}
                 </div>
 
-                <div>
-                  <label htmlFor="stockQuantity" className={labelClass}>
-                    Stock Quantity <span className="text-red-500">*</span>
+                {/* Currency */}
+                <div className="flex-1">
+                  <label htmlFor="currency" className={labelClass}>
+                    Currency <span className="text-red-500">*</span>
                   </label>
+                  {!showAddCurrency ? (
+                    <div className="flex gap-2">
+                      <select
+                        id="currency"
+                        name="currency"
+                        className={`${inputClass} ${errors.currency ? 'border-red-500' : ''}`}
+                        value={formData.currency}
+                        onChange={handleChange}
+                        required
+                      >
+                        {currencies.map((currency) => (
+                          <option key={currency} value={currency}>
+                            {currency} ({getCurrencySymbol(currency)})
+                          </option>
+                        ))}
+                      </select>
+                      <button 
+                        type="button"
+                        className="bg-blue-100 text-blue-700 p-2 rounded-md hover:bg-blue-200 flex items-center justify-center"
+                        onClick={() => setShowAddCurrency(true)}
+                      >
+                        <Plus size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="New currency code"
+                        className={`${inputClass} ${currencyError ? 'border-red-500' : ''}`}
+                        value={newCurrency}
+                        onChange={(e) => {
+                          setNewCurrency(e.target.value);
+                          setCurrencyError("");
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="bg-green-600 text-white p-2 rounded-md hover:bg-green-700 flex items-center justify-center"
+                        onClick={handleAddCurrency}
+                      >
+                        <Plus size={20} />
+                      </button>
+                      <button
+                        type="button"
+                        className="bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300 flex items-center justify-center"
+                        onClick={() => {
+                          setShowAddCurrency(false);
+                          setNewCurrency("");
+                          setCurrencyError("");
+                        }}
+                      >
+                        <XCircle size={20} />
+                      </button>
+                    </div>
+                  )}
+                  {currencyError && <p className={errorClass}>{currencyError}</p>}
+                  {errors.currency && <p className={errorClass}>{errors.currency}</p>}
+                </div>
+              </div>
+
+              {/* Stock Quantity and Units */}
+              <div>
+                <label htmlFor="stockQuantity" className={labelClass}>
+                  Stock Quantity <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2">
                   <input
                     type="number"
                     id="stockQuantity"
@@ -312,8 +539,65 @@ const CreateProductModal = ({
                     onChange={handleChange}
                     required
                   />
-                  <p className={helpTextClass}>0 means product is out of stock</p>
+                  
+                  {!showAddStockUnit ? (
+                    <div className="flex gap-2 min-w-[150px]">
+                      <select
+                        id="stockUnit"
+                        name="stockUnit"
+                        className={`${inputClass}`}
+                        value={formData.stockUnit}
+                        onChange={handleChange}
+                      >
+                        {stockUnits.map((unit) => (
+                          <option key={unit} value={unit}>
+                            {unit}
+                          </option>
+                        ))}
+                      </select>
+                      <button 
+                        type="button"
+                        className="bg-blue-100 text-blue-700 p-2 rounded-md hover:bg-blue-200 flex items-center justify-center"
+                        onClick={() => setShowAddStockUnit(true)}
+                      >
+                        <Plus size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 min-w-[150px]">
+                      <input
+                        type="text"
+                        placeholder="New unit"
+                        className={`${inputClass} ${stockUnitError ? 'border-red-500' : ''}`}
+                        value={newStockUnit}
+                        onChange={(e) => {
+                          setNewStockUnit(e.target.value);
+                          setStockUnitError("");
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="bg-green-600 text-white p-2 rounded-md hover:bg-green-700 flex items-center justify-center"
+                        onClick={handleAddStockUnit}
+                      >
+                        <Plus size={20} />
+                      </button>
+                      <button
+                        type="button"
+                        className="bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300 flex items-center justify-center"
+                        onClick={() => {
+                          setShowAddStockUnit(false);
+                          setNewStockUnit("");
+                          setStockUnitError("");
+                        }}
+                      >
+                        <XCircle size={20} />
+                      </button>
+                    </div>
+                  )}
                 </div>
+                {stockUnitError && <p className={errorClass}>{stockUnitError}</p>}
+                <p className={helpTextClass}>0 means product is out of stock</p>
               </div>
 
               {/* Category */}

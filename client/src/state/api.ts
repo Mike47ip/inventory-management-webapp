@@ -3,13 +3,15 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Log the API URL for debugging
 console.log('API URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
 
-// Type definitions remain exactly the same
+// Updated type definitions with currency and stockUnit
 export interface Product {
   productId: string;
   name: string;
   price: number;
+  currency: string;
   rating?: number;
   stockQuantity: number;
+  stockUnit: string;
   category?: string;
   image?: string;
 }
@@ -17,8 +19,10 @@ export interface Product {
 export interface NewProduct {
   name: string;
   price: number;
+  currency: string;
   rating?: number;
   stockQuantity: number;
+  stockUnit: string;
   category?: string;
   image?: File;
 }
@@ -26,6 +30,7 @@ export interface NewProduct {
 export interface SalesSummary {
   salesSummaryId: string;
   totalValue: number;
+  currency: string;
   changePercentage?: number;
   date: string;
 }
@@ -33,6 +38,7 @@ export interface SalesSummary {
 export interface PurchaseSummary {
   purchaseSummaryId: string;
   totalPurchased: number;
+  currency: string;
   changePercentage?: number;
   date: string;
 }
@@ -40,6 +46,7 @@ export interface PurchaseSummary {
 export interface ExpenseSummary {
   expenseSummarId: string;
   totalExpenses: number;
+  currency: string;
   date: string;
 }
 
@@ -47,6 +54,7 @@ export interface ExpenseByCategorySummary {
   expenseByCategorySummaryId: string;
   category: string;
   amount: string;
+  currency: string;
   date: string;
 }
 

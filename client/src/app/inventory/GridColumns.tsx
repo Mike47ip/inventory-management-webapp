@@ -122,14 +122,41 @@ export const getGridColumns = ({
     },
     { field: "productId", headerName: "ID", width: 120 },
     { field: "name", headerName: "Name", flex: 0.5 },
-    {
-      field: "price",
-      headerName: "Price",
-      type: "number",
-      flex: 0.4,
-      headerAlign: "left",
-      valueGetter: (value, row) => `$${row.price}`,
-    },
+// Fix for the price column in GridColumns.tsx
+{
+  field: "price",
+  headerName: "Price",
+  flex: 0.4,
+  headerAlign: "left",
+  renderCell: (params) => {
+    const product = params.row;
+    // Get the currency symbol instead of the currency code
+    const currencyCode = product.currency || 'GHC';
+    const currencySymbols: Record<string, string> = {
+      'GHC': '₵',
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'JPY': '¥',
+      'CAD': 'C$',
+      'AUD': 'A$',
+    };
+    const symbol = currencySymbols[currencyCode] || '$';
+    const price = typeof product.price === 'number' 
+      ? product.price.toFixed(2) 
+      : product.price;
+    
+    return (
+      <div style={{ display: "flex", width: "100%" }}>
+        {`${symbol} ${price}`}
+      </div>
+    );
+  },
+  // Keep valueGetter for sorting purposes
+  valueGetter: (value, row) => {
+    return row?.price || 0;
+  },
+},
     // Category column
     {
       field: "category",

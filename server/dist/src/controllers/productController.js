@@ -69,7 +69,7 @@ const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
 exports.getProducts = getProducts;
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, price, rating, stockQuantity, category } = req.body;
+        const { name, price, currency, rating, stockQuantity, stockUnit, category } = req.body;
         // Parse and validate numbers
         const parseNumber = (value, fieldName) => {
             const num = Number(value);
@@ -78,7 +78,7 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             }
             return num;
         };
-        const productData = Object.assign(Object.assign(Object.assign({ name, price: parseNumber(price, 'price'), stockQuantity: parseNumber(stockQuantity, 'stock quantity') }, (category && { category })), (rating && { rating: parseNumber(rating, 'rating') })), (req.file && { image: `/uploads/products/${req.file.filename}` }));
+        const productData = Object.assign(Object.assign(Object.assign({ name, price: parseNumber(price, 'price'), currency: currency || 'GH₵', stockQuantity: parseNumber(stockQuantity, 'stock quantity'), stockUnit: stockUnit || 'Units' }, (category && { category })), (rating && { rating: parseNumber(rating, 'rating') })), (req.file && { image: `/uploads/products/${req.file.filename}` }));
         const product = yield prisma.products.create({
             data: productData,
         });
@@ -118,6 +118,9 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (updateData.stockQuantity && isNaN(Number(updateData.stockQuantity))) {
             return res.status(400).json({ message: "stockQuantity must be a number" });
         }
+        if (updateData.price && isNaN(Number(updateData.price))) {
+            return res.status(400).json({ message: "price must be a number" });
+        }
         // Debug current state
         const currentProduct = yield prisma.products.findUnique({
             where: { productId }
@@ -125,6 +128,8 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         console.log('\n📦 Current Product State:', {
             productId: currentProduct === null || currentProduct === void 0 ? void 0 : currentProduct.productId,
             currentStock: currentProduct === null || currentProduct === void 0 ? void 0 : currentProduct.stockQuantity,
+            currentCurrency: currentProduct === null || currentProduct === void 0 ? void 0 : currentProduct.currency,
+            currentStockUnit: currentProduct === null || currentProduct === void 0 ? void 0 : currentProduct.stockUnit,
             requestedChanges: updateData
         });
         // Perform update
@@ -136,6 +141,8 @@ const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             productId: updatedProduct.productId,
             updatedFields: Object.keys(updateData),
             newStock: updatedProduct.stockQuantity,
+            currency: updatedProduct.currency,
+            stockUnit: updatedProduct.stockUnit,
             timestamp: new Date().toISOString()
         });
         return res.json(updatedProduct);

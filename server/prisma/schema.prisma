@@ -14,11 +14,13 @@ model Users {
 }
 
 model Products {
-  productId     String   @id @default(uuid()) // Auto-generated UUID for productId
+  productId     String   @id @default(uuid()) 
   name          String
   price         Float
-  rating        Float?
+  currency      String   @default("GHC") // New field
   stockQuantity Int
+  stockUnit     String   @default("units") // New field
+  rating        Float?
   category      String   @default("Uncategorized") 
   image         String?
   Purchases     Purchases[]

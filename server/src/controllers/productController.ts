@@ -76,7 +76,7 @@ export const getProducts = async (req: Request, res: Response): Promise<Response
 
 export const createProduct = async (req: MulterRequest, res: Response): Promise<Response> => {
   try {
-    const { name, price, rating, stockQuantity, category } = req.body;
+    const { name, price, currency, rating, stockQuantity, stockUnit, category } = req.body;
     
     // Parse and validate numbers
     const parseNumber = (value: any, fieldName: string): number => {
@@ -90,7 +90,9 @@ export const createProduct = async (req: MulterRequest, res: Response): Promise<
     const productData = {
       name,
       price: parseNumber(price, 'price'),
+      currency: currency || 'GH₵', // Default to USD if not provided
       stockQuantity: parseNumber(stockQuantity, 'stock quantity'),
+      stockUnit: stockUnit || 'Units', // Default to Units if not provided
       ...(category && { category }),
       ...(rating && { rating: parseNumber(rating, 'rating') }),
       ...(req.file && { image: `/uploads/products/${req.file.filename}` })
@@ -115,8 +117,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<Respon
   let updateData: any = req.body;
 
   console.log('FULL REQUEST HEADERS:', req.headers);
-    console.log('FULL REQUEST BODY:', req.body);
-    console.log('CONTENT TYPE:', req.get('Content-Type'));
+  console.log('FULL REQUEST BODY:', req.body);
+  console.log('CONTENT TYPE:', req.get('Content-Type'));
 
   console.group('\n🔄 Product Update Request');
   console.log('📦 Product ID:', productId);
@@ -145,6 +147,10 @@ export const updateProduct = async (req: Request, res: Response): Promise<Respon
     if (updateData.stockQuantity && isNaN(Number(updateData.stockQuantity))) {
       return res.status(400).json({ message: "stockQuantity must be a number" });
     }
+    
+    if (updateData.price && isNaN(Number(updateData.price))) {
+      return res.status(400).json({ message: "price must be a number" });
+    }
 
     // Debug current state
     const currentProduct = await prisma.products.findUnique({
@@ -154,6 +160,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<Respon
     console.log('\n📦 Current Product State:', {
       productId: currentProduct?.productId,
       currentStock: currentProduct?.stockQuantity,
+      currentCurrency: currentProduct?.currency,
+      currentStockUnit: currentProduct?.stockUnit,
       requestedChanges: updateData
     });
 
@@ -167,6 +175,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<Respon
       productId: updatedProduct.productId,
       updatedFields: Object.keys(updateData),
       newStock: updatedProduct.stockQuantity,
+      currency: updatedProduct.currency,
+      stockUnit: updatedProduct.stockUnit,
       timestamp: new Date().toISOString()
     });
 

@@ -113,28 +113,33 @@ const Products = () => {
 
  const handleCreateProduct = async (productData: ProductFormData) => {
   try {
-   const formData = new FormData();
-   formData.append("name", productData.name);
-   formData.append("price", productData.price.toString());
-   formData.append("currency", productData.currency || 'USD');
-   formData.append("stockQuantity", productData.stockQuantity.toString());
-   formData.append("stockUnit", productData.stockUnit || 'Units');
-   formData.append("rating", productData.rating.toString());
-   formData.append("category", productData.category);
+    const formData = new FormData();
+    formData.append("name", productData.name);
+    formData.append("price", productData.price.toString());
+    formData.append("currency", productData.currency || 'GHC');
+    formData.append("stockQuantity", productData.stockQuantity.toString());
+    formData.append("stockUnit", productData.stockUnit || 'Units');
+    formData.append("rating", (productData.rating || 0).toString());
+    formData.append("category", productData.category);
 
-   if (productData.image) {
-    formData.append("image", productData.image);
-   }
+    if (productData.image) {
+      formData.append("image", productData.image);
+    }
 
-   // Send the formData to the backend
-   const response = await createProduct(formData).unwrap();
-   
-   setIsCreateModalOpen(false);
-   refetch();
+    // Send the formData to the backend
+    await createProduct(formData).unwrap();
+    
+    // Close the modal
+    setIsCreateModalOpen(false);
+    
+    // Reset form state (moved to onClose logic in CreateProductModal)
   } catch (error) {
-   console.error("Failed to create product", error);
+    console.error("Failed to create product", error);
+    // Optionally, show an error toast or message to the user
+    // You might want to add error handling UI in the modal
+    throw error; // Re-throw to allow modal to handle error state
   }
- };
+};
 
  const handleUpdateProduct = async ({ 
   productId, 
