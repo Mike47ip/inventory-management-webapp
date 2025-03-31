@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Header from "@/app/(components)/Header";
 import { useCategories } from "@/app/(context)/CategoryContext";
+import { useGetProductsQuery } from "@/state/api";
 
 // Type definitions
 type Product = {
@@ -22,8 +23,11 @@ type Product = {
  name: string;
  price: number;
  stockQuantity: number;
+ currency?: string;
+ stockUnit?: string;
  category?: string;
  image?: string;
+ rating?: number;
 };
 
 type CartItem = {
@@ -38,7 +42,16 @@ type Customer = {
  phone?: string;
 };
 
-// Mock data for now - will be replaced with API data later
+// Currency symbols mapping
+const currencySymbols = {
+ GHC: "₵",
+ USD: "$",
+ EUR: "€",
+ GBP: "£",
+ CAD: "C$",
+};
+
+// Mock data for customers - will be replaced with API data later
 const mockCustomers: Customer[] = [
  {
   id: "1",
@@ -60,12 +73,9 @@ const SalesPage = () => {
  const { categories } = useCategories();
 
  // State declarations
- const [products, setProducts] = useState<Product[]>([]);
- const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
  const [searchTerm, setSearchTerm] = useState("");
  const [categoryFilter, setCategoryFilter] = useState("");
  const [cart, setCart] = useState<CartItem[]>([]);
- const [isLoading, setIsLoading] = useState(true);
  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
   null
  );
@@ -74,6 +84,24 @@ const SalesPage = () => {
  const [paymentMethod, setPaymentMethod] = useState("cash");
  const [note, setNote] = useState("");
  const [discountPercent, setDiscountPercent] = useState(0);
+
+ // Fetch products from API
+ const {
+  data: products = [],
+  isLoading,
+  isError,
+ } = useGetProductsQuery(searchTerm);
+
+ // Filter products based on search and category
+ const filteredProducts = useMemo(() => {
+  let result = [...products];
+
+  if (categoryFilter) {
+   result = result.filter((product) => product.category === categoryFilter);
+  }
+
+  return result;
+ }, [products, categoryFilter]);
 
  // Toast notification state
  const [notification, setNotification] = useState<{
@@ -86,76 +114,19 @@ const SalesPage = () => {
   type: "info",
  });
 
- // Mock loading products - replace with API call later
- useEffect(() => {
-  // Simulate API call
-  setTimeout(() => {
-   // Mock data
-   const mockProducts: Product[] = [
-    {
-     productId: "1",
-     name: "Smartphone X",
-     price: 799.99,
-     stockQuantity: 15,
-     category: "Electronics",
-     image: "/assets/default-image.png",
-    },
-    {
-     productId: "2",
-     name: "Wireless Headphones",
-     price: 149.99,
-     stockQuantity: 30,
-     category: "Electronics",
-     image: "/assets/default-image.png",
-    },
-    {
-     productId: "3",
-     name: "Designer T-Shirt",
-     price: 49.99,
-     stockQuantity: 100,
-     category: "Clothing",
-     image: "/assets/default-image.png",
-    },
-    {
-     productId: "4",
-     name: "Organic Coffee Beans",
-     price: 12.99,
-     stockQuantity: 50,
-     category: "Food & Beverage",
-     image: "/assets/default-image.png",
-    },
-    {
-     productId: "5",
-     name: "Fitness Tracker",
-     price: 89.99,
-     stockQuantity: 20,
-     category: "Electronics",
-     image: "/assets/default-image.png",
-    },
-   ];
+ // Format price with currency
+ const formatPrice = (product: Product): string => {
+  const currency = product.currency || "GHC";
+  const symbol =
+   currencySymbols[currency as keyof typeof currencySymbols] || currency;
+  return `${symbol}${product.price.toFixed(2)}`;
+ };
 
-   setProducts(mockProducts);
-   setFilteredProducts(mockProducts);
-   setIsLoading(false);
-  }, 1000);
- }, []);
-
- // Filter products based on search and category
- useEffect(() => {
-  let result = products;
-
-  if (searchTerm) {
-   result = result.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-   );
-  }
-
-  if (categoryFilter) {
-   result = result.filter((product) => product.category === categoryFilter);
-  }
-
-  setFilteredProducts(result);
- }, [searchTerm, categoryFilter, products]);
+ // Format stock with unit
+ const formatStock = (product: Product): string => {
+  const unit = product.stockUnit || "Units";
+  return `${product.stockQuantity} ${unit}`;
+ };
 
  // Filter customers based on search
  const filteredCustomers = useMemo(() => {
@@ -348,6 +319,10 @@ const SalesPage = () => {
       <div className="flex justify-center items-center h-64">
        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
+     ) : isError ? (
+      <div className="text-center py-10">
+       <p className="text-red-500">Error loading products. Please try again.</p>
+      </div>
      ) : (
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
        {filteredProducts.map((product) => {
@@ -371,27 +346,35 @@ const SalesPage = () => {
           )}
           <div className="h-32 relative mb-2">
            <Image
-            src={product.image || "/assets/default-image.png"}
+            src={
+             product.image
+              ? `http://localhost:8000${product.image}`
+              : "/assets/default-image.png"
+            }
             alt={product.name}
             fill
             className="object-contain"
+            onError={(e) => {
+             (e.target as HTMLImageElement).src = "/assets/default-image.png";
+            }}
            />
           </div>
           <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
           <div className="mt-1 flex justify-between items-center">
            <span className="text-sm font-semibold text-gray-900">
-            ${product.price.toFixed(2)}
+            {formatPrice(product)}
            </span>
            <span
-            className={`text-xs px-2 py-1 rounded-full ${
+            className={`text-xs px-2 py-1 rounded-full self-start flex flex-col ${
              product.stockQuantity > 0
               ? "bg-green-100 text-green-800"
               : "bg-red-100 text-red-800"
             }`}
            >
-            {product.stockQuantity > 0
-             ? `Stock: ${product.stockQuantity}`
-             : "Out of stock"}
+            <span>Stock:</span>
+            <span>
+             {product.stockQuantity > 0 ? formatStock(product) : "Out of stock"}
+            </span>
            </span>
           </div>
          </div>
@@ -400,10 +383,10 @@ const SalesPage = () => {
       </div>
      )}
 
-     {filteredProducts.length === 0 && !isLoading && (
+     {filteredProducts.length === 0 && !isLoading && !isError && (
       <div className="text-center py-10">
        <p className="text-gray-500">
-        No products found. Try a different search term.
+        No products found. Try a different search term or category.
        </p>
       </div>
      )}
@@ -488,7 +471,7 @@ const SalesPage = () => {
            <div className="flex-1">
             <h4 className="font-medium text-gray-900">{item.product.name}</h4>
             <p className="text-gray-500 text-sm">
-             ${item.product.price.toFixed(2)} ×
+             {formatPrice(item.product)} ×
              <span
               className="cursor-pointer hover:text-blue-600 hover:underline"
               onClick={(e) => {
@@ -506,13 +489,20 @@ const SalesPage = () => {
            </div>
            <div className="text-right">
             <p className="font-medium">
-             ${(item.product.price * item.quantity).toFixed(2)}
+             {formatPrice({
+              ...item.product,
+              price: item.product.price * item.quantity,
+             })}
             </p>
             <div className="flex items-center mt-1">
              <button
-              onClick={() =>
-               updateCartItemQuantity(item.product.productId, item.quantity - 1)
-              }
+              onClick={(e) => {
+               e.stopPropagation();
+               updateCartItemQuantity(
+                item.product.productId,
+                item.quantity - 1
+               );
+              }}
               className="p-1 text-gray-400 hover:text-gray-700"
              >
               <Minus className="h-4 w-4" />
@@ -533,16 +523,23 @@ const SalesPage = () => {
               onClick={(e) => e.stopPropagation()}
              />
              <button
-              onClick={() =>
-               updateCartItemQuantity(item.product.productId, item.quantity + 1)
-              }
+              onClick={(e) => {
+               e.stopPropagation();
+               updateCartItemQuantity(
+                item.product.productId,
+                item.quantity + 1
+               );
+              }}
               className="p-1 text-gray-400 hover:text-gray-700"
               disabled={item.quantity >= item.product.stockQuantity}
              >
               <Plus className="h-4 w-4" />
              </button>
              <button
-              onClick={() => removeFromCart(item.product.productId)}
+              onClick={(e) => {
+               e.stopPropagation();
+               removeFromCart(item.product.productId);
+              }}
               className="ml-3 p-1 text-red-500 hover:text-red-700"
              >
               <Trash2 className="h-4 w-4" />
