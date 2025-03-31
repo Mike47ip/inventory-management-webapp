@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import {
   Box,
@@ -13,6 +13,7 @@ import {
 import {
   Product,
   useGetProductsQuery,
+  useCreateProductMutation,
   useUpdateProductFieldsMutation,
 } from "@/state/api";
 import { GridToolbar } from "@mui/x-data-grid";
@@ -26,6 +27,18 @@ import useProductUnits from "./useProductUnits";
 import { SelectedProductInfo } from "../types/productTypes";
 import ProductDetailModal from "./ProductDetailModal";
 
+// Type for product form data
+type ProductFormData = {
+  name: string;
+  price: number;
+  currency: string;
+  stockQuantity: number;
+  stockUnit: string;
+  rating: number;
+  category: string;
+  image: File | null;
+};
+
 const Inventory = () => {
   // Get dark mode state from Redux
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
@@ -35,8 +48,10 @@ const Inventory = () => {
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [openRestockModal, setOpenRestockModal] = useState<boolean>(false);
   const [viewProductModal, setViewProductModal] = useState<boolean>(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [selectedViewProduct, setSelectedViewProduct] = useState<Product | null>(null);
   const [featuredProducts, setFeaturedProducts] = useState<Set<string>>(new Set());
+  const [localProducts, setLocalProducts] = useState<Product[]>([]);
 
   // Filter mode: "all", "featured", "regular"
   const [filterMode, setFilterMode] = useState<string>("all");
@@ -51,9 +66,34 @@ const Inventory = () => {
   const { getProductUnit } = useProductUnits();
 
   // API hooks
-  const { data: products = [], isLoading, refetch } = useGetProductsQuery();
+  const { 
+    data: products = [], 
+    isLoading, 
+    refetch 
+  } = useGetProductsQuery();
+
+  // Mutations
+  const [createProduct] = useCreateProductMutation();
   const [updateProductFields] = useUpdateProductFieldsMutation();
-  
+
+  // Update local products when fetched products change
+  useEffect(() => {
+    if (products && products.length > 0) {
+      // Log a sample product to check structure
+      console.log("Sample product from API:", products[0]);
+      
+      // Set local products, ensuring each has a currency
+      const productsWithDefaults = products.map(product => ({
+        ...product,
+        currency: product.currency || 'GHC'  // Default if missing
+      }));
+      
+      setLocalProducts(productsWithDefaults);
+    } else {
+      setLocalProducts(products);
+    }
+  }, [products]);
+
   // View product handlers
   const handleViewProduct = useCallback((product: Product) => {
     setSelectedViewProduct(product);
@@ -69,6 +109,7 @@ const Inventory = () => {
     }
     setFeaturedProducts(newFeaturedProducts);
   }, [featuredProducts]);
+
   // Get DataGrid columns configuration
   const columns = useMemo(() => getGridColumns({
     isDarkMode,
@@ -78,15 +119,12 @@ const Inventory = () => {
     handleViewProduct,
   }), [isDarkMode, featuredProducts, toggleFeatured, getProductUnit, handleViewProduct]);
 
-  // Toggle featured status for a product
-
-
   // Function to get display list of selected products
   const getSelectedProductsInfo = useCallback((): SelectedProductInfo[] => {
     if (!selectedProductIds.length) return [];
 
     return selectedProductIds.map((id) => {
-      const product = products.find((p) => p.productId === id);
+      const product = localProducts.find((p) => p.productId === id);
       return {
         id: product?.productId || "",
         name: product?.name || "Unknown product",
@@ -97,7 +135,7 @@ const Inventory = () => {
         unit: product ? getProductUnit(product) : "Units",
       };
     });
-  }, [selectedProductIds, products, productRestockQuantities, getProductUnit]);
+  }, [selectedProductIds, localProducts, productRestockQuantities, getProductUnit]);
 
   // Modal handlers
   const handleOpenRestockModal = useCallback(() => {
@@ -121,8 +159,6 @@ const Inventory = () => {
     setActiveProductId(null);
     setProductRestockQuantities({});
   }, []);
-
-
 
   const handleCloseViewProduct = useCallback(() => {
     setViewProductModal(false);
@@ -184,7 +220,7 @@ const Inventory = () => {
 
       await Promise.all(
         productsToUpdate.map(async ({ id: productId, qty }) => {
-          const product = products.find((p) => p.productId === productId);
+          const product = localProducts.find((p) => p.productId === productId);
           if (!product) {
             console.warn(`Product ${productId} not found`);
             return;
@@ -219,7 +255,51 @@ const Inventory = () => {
       handleCloseRestockModal();
       console.groupEnd();
     }
-  }, [productRestockQuantities, products, updateProductFields, refetch, handleCloseRestockModal]);
+  }, [productRestockQuantities, localProducts, updateProductFields, refetch, handleCloseRestockModal]);
+
+  // Handle API product creation
+  const handleApiCreateProduct = useCallback(async (formData: ProductFormData) => {
+    try {
+
+      // Prepare FormData for API
+      const apiFormData = new FormData();
+      apiFormData.append("name", formData.name);
+      apiFormData.append("price", formData.price.toString());
+      apiFormData.append("currency", formData.currency || "GHC"); // Add default
+      apiFormData.append("stockQuantity", formData.stockQuantity.toString());
+      apiFormData.append("stockUnit", formData.stockUnit || "Units"); // Add default
+      apiFormData.append("rating", (formData.rating || 0).toString());
+      apiFormData.append("category", formData.category);
+
+      if (formData.image) {
+        apiFormData.append("image", formData.image);
+      }
+
+      // Create product via API
+      const createdProduct = await createProduct(apiFormData).unwrap();
+      console.log("Created product response:", createdProduct);
+
+      // After creating the product, manually add it to local state 
+      // to ensure we have the currency until the next refetch
+      setLocalProducts(prevProducts => [
+        ...prevProducts,
+        {
+          ...createdProduct,
+          currency: formData.currency || "GHC", // Ensure currency is present
+          stockUnit: formData.stockUnit || "Units" // Ensure stockUnit is present
+        }
+      ]);
+
+      // Refetch to ensure we have the most up-to-date product list
+      await refetch();
+
+      // Close the modal
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error("Failed to create product", error);
+      // TODO: Add error handling (e.g., show error toast)
+    }
+  }, [createProduct, refetch]);
 
   // Check if any product has a restock quantity > 0
   const hasProductsToRestock = useMemo(() => {
@@ -233,7 +313,7 @@ const Inventory = () => {
 
   // Filter products based on search query and featured status
   const filteredProducts = useMemo(() => {
-    let filtered = products.filter((product: Product) =>
+    let filtered = localProducts.filter((product: Product) =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -249,15 +329,15 @@ const Inventory = () => {
     }
 
     return filtered;
-  }, [products, searchQuery, featuredProducts, filterMode]);
+  }, [localProducts, searchQuery, featuredProducts, filterMode]);
 
   // Get selected products information for the modal
   const selectedProducts = getSelectedProductsInfo();
 
   // Count of featured products
   const featuredCount = useMemo(
-    () => products.filter((p) => featuredProducts.has(p.productId)).length,
-    [products, featuredProducts]
+    () => localProducts.filter((p) => featuredProducts.has(p.productId)).length,
+    [localProducts, featuredProducts]
   );
 
   return (
@@ -270,14 +350,16 @@ const Inventory = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Button
-            color="primary"
-            variant="contained"
-            onClick={handleOpenRestockModal}
-            disabled={selectedProductIds.length === 0}
-          >
-            Restock <span className="hidden md:block"> Selected Products</span>
-          </Button>
+          <Box display="flex" gap={2}>
+            <Button
+              color="primary"
+              variant="contained"
+              onClick={handleOpenRestockModal}
+              disabled={selectedProductIds.length === 0}
+            >
+              Restock <span className="hidden md:block"> Selected Products</span>
+            </Button>
+          </Box>
         </Box>
 
         {/* Featured filter toggle */}
@@ -328,6 +410,7 @@ const Inventory = () => {
           sx={dataGridStyles}
         />
       </Box>
+
 
       {/* Restock Modal */}
       <RestockModal 
