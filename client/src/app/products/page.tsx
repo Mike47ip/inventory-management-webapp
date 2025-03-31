@@ -1,14 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { 
-  Modal, 
-  Box, 
-  Typography, 
-  Backdrop, 
-  Fade,
-  Button
-} from "@mui/material";
+import { useState, useEffect } from "react";
 import { 
   useCreateProductMutation, 
   useGetProductsQuery, 
@@ -22,248 +14,27 @@ import Image from "next/image";
 import ProductEditModal from "./ProductEditModal";
 import { archiveProduct, unarchiveProduct, getArchivedProducts } from "@/utils/archive";
 import Link from "next/link";
+// Import the extracted ProductViewModal component
+import ProductViewModal, { 
+  Product, 
+  ProductUnitsMap,
+  getCategoryDefaultUnit,
+  currencySymbols
+} from './ProductViewModal';
 
-
+// Updated type definition to include currency and stockUnit
 type ProductFormData = {
  name: string;
  price: number;
+ currency: string;
  stockQuantity: number;
+ stockUnit: string;
  rating: number;
  category: string;
  image: File | null;
 };
 
-type Product = {
- productId: string;
- name: string;
- price: number;
- stockQuantity: number;
- rating?: number;
- category?: string;
- image?: string;
-};
-
-const ProductViewModal = ({
-  open,
-  handleClose,
-  product,
-}: {
-  open: boolean;
-  handleClose: () => void;
-  product: Product | null;
-}) => {
-  if (!product) return null;
-
-  return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      closeAfterTransition
-      slots={{ backdrop: Backdrop }}
-      slotProps={{
-        backdrop: {
-          timeout: 500,
-        },
-      }}
-    >
-      <Fade in={open}>
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', sm: '80%', md: '70%', lg: '60%' },
-            maxWidth: '800px',
-            maxHeight: '90vh',
-            bgcolor: 'background.paper',
-            borderRadius: 2,
-            boxShadow: 24,
-            p: { xs: 3, sm: 4 },
-            overflow: 'auto'
-          }}
-        >
-          <Typography variant="h5" component="h2" sx={{ 
-            mb: 3, 
-            fontWeight: 600, 
-            color: 'text.primary',
-            textAlign: { xs: 'center', md: 'left' } 
-          }}>
-            Product Details
-          </Typography>
-
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: { xs: 3, md: 4 },
-            alignItems: 'center',
-            mb: 3
-          }}>
-            {/* Product Image */}
-            <Box sx={{ 
-              width: { xs: '100%', md: '40%' }, 
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
-              <Box
-                sx={{
-                  position: 'relative',
-                  width: { xs: 200, sm: 250, md: 300 },
-                  height: { xs: 200, sm: 250, md: 300 },
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.3s ease-in-out',
-                  '&:hover': {
-                    transform: 'scale(1.02)'
-                  }
-                }}
-              >
-                <Image
-                  src={
-                    product.image
-                      ? `http://localhost:8000${product.image}`
-                      : "/assets/default-image.png"
-                  }
-                  alt={product.name}
-                  fill
-                  style={{ objectFit: "contain" }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/assets/default-image.png";
-                  }}
-                />
-              </Box>
-            </Box>
-
-            {/* Product Info */}
-            <Box sx={{ 
-              width: { xs: '100%', md: '60%' },
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2
-            }}>
-              {/* Product Name */}
-              <Typography variant="h4" component="h3" sx={{ 
-                fontWeight: 600,
-                color: 'text.primary',
-                textAlign: { xs: 'center', md: 'left' }
-              }}>
-                {product.name}
-              </Typography>
-
-              {/* Price */}
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  color: 'primary.main', 
-                  fontWeight: 500,
-                  textAlign: { xs: 'center', md: 'left' }
-                }}
-              >
-                ${product.price.toFixed(2)}
-              </Typography>
-
-              {/* Rating */}
-              <Box sx={{ 
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                justifyContent: { xs: 'center', md: 'flex-start' }
-              }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: { xs: 'center', md: 'flex-start' } 
-                }}>
-                  <Rating rating={product.rating ?? 0} />
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  ({product.rating?.toFixed(1) || '0.0'}/5)
-                </Typography>
-              </Box>
-
-              {/* Divider */}
-              <Box sx={{ 
-                height: '1px', 
-                width: '100%', 
-                bgcolor: 'divider', 
-                my: 1 
-              }} />
-
-              {/* Details */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                {/* Stock Info */}
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Stock Status
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box
-                      sx={{
-                        display: 'inline-block',
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 1,
-                        bgcolor: product.stockQuantity >= 100 ? 'success.light' : 'error.light',
-                        color: product.stockQuantity >= 100 ? 'success.dark' : 'error.dark',
-                        fontWeight: 500,
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      {product.stockQuantity >= 100 ? 'In Stock' : 'Low Stock'}
-                    </Box>
-                    <Typography variant="body1">
-                      {product.stockQuantity} units
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Category */}
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Category
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {product.category || 'Uncategorized'}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Product ID */}
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Product ID
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    fontFamily: 'monospace',
-                    bgcolor: 'background.default',
-                    p: 1,
-                    borderRadius: 1,
-                    display: 'inline-block'
-                  }}
-                >
-                  {product.productId}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Close Button */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button 
-              variant="contained" 
-              onClick={handleClose}
-              sx={{ minWidth: '120px' }}
-            >
-              Close
-            </Button>
-          </Box>
-        </Box>
-      </Fade>
-    </Modal>
-  );
-};
+const LOCAL_STORAGE_UNITS_KEY = "productStockUnits";
 
 const Products = () => {
  const [searchTerm, setSearchTerm] = useState("");
@@ -273,23 +44,68 @@ const Products = () => {
  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
  const [archivedIds, setArchivedIds] = useState<string[]>(getArchivedProducts());
+ 
+ // Store product units in local state and localStorage (for backward compatibility)
+ const [productUnits, setProductUnits] = useState<ProductUnitsMap>({});
+
+ // Load product units from localStorage on component mount
+ useEffect(() => {
+   try {
+     const savedUnits = localStorage.getItem(LOCAL_STORAGE_UNITS_KEY);
+     if (savedUnits) {
+       setProductUnits(JSON.parse(savedUnits));
+     }
+   } catch (error) {
+     console.error("Error loading product units from localStorage:", error);
+   }
+ }, []);
+
+ // Save product unit to localStorage (for backward compatibility)
+ const saveProductUnit = (productId: string, unit: string) => {
+   const updatedUnits = { ...productUnits, [productId]: unit };
+   setProductUnits(updatedUnits);
+   
+   try {
+     localStorage.setItem(LOCAL_STORAGE_UNITS_KEY, JSON.stringify(updatedUnits));
+   } catch (error) {
+     console.error("Error saving product units to localStorage:", error);
+   }
+ };
+
+ // Get unit for a product (prefer database value, fallback to localStorage or default)
+ const getProductUnit = (product: Product): string => {
+   return product.stockUnit || productUnits[product.productId] || getCategoryDefaultUnit(product.category);
+ };
+
+ // Format stock display with unit
+ const formatStockDisplay = (product: Product): string => {
+   const unit = getProductUnit(product);
+   return `${product.stockQuantity} ${unit}`;
+ };
+
+ // Format price with currency
+ const formatPrice = (product: Product): string => {
+   const currency = product.currency || 'GHC';
+   const symbol = currencySymbols[currency] || currency;
+   return `${symbol}${product.price.toFixed(2)}`;
+ };
 
  const handleArchiveProduct = (productId: string) => {
   archiveProduct(productId);
   setArchivedIds([...archivedIds, productId]);
-};
+ };
 
  const handleUnarchiveProduct = (productId: string) => {
   unarchiveProduct(productId);
   setArchivedIds(archivedIds.filter(id => id !== productId));
-};
+ };
 
-const { data: products, isLoading, isError, refetch } = useGetProductsQuery(searchTerm);
-// Filter products in your render
-const activeProducts = products?.filter(product => !archivedIds.includes(product.productId));
-const archivedProducts = products?.filter(product => 
-  archivedIds.includes(product.productId)
-) || []; // Fallback to empty array
+ const { data: products, isLoading, isError, refetch } = useGetProductsQuery(searchTerm);
+ // Filter products in your render
+ const activeProducts = products?.filter(product => !archivedIds.includes(product.productId));
+ const archivedProducts = products?.filter(product => 
+   archivedIds.includes(product.productId)
+ ) || []; // Fallback to empty array
 
 
  const [createProduct] = useCreateProductMutation();
@@ -300,7 +116,9 @@ const archivedProducts = products?.filter(product =>
    const formData = new FormData();
    formData.append("name", productData.name);
    formData.append("price", productData.price.toString());
+   formData.append("currency", productData.currency || 'USD');
    formData.append("stockQuantity", productData.stockQuantity.toString());
+   formData.append("stockUnit", productData.stockUnit || 'Units');
    formData.append("rating", productData.rating.toString());
    formData.append("category", productData.category);
 
@@ -308,7 +126,9 @@ const archivedProducts = products?.filter(product =>
     formData.append("image", productData.image);
    }
 
-   await createProduct(formData);
+   // Send the formData to the backend
+   const response = await createProduct(formData).unwrap();
+   
    setIsCreateModalOpen(false);
    refetch();
   } catch (error) {
@@ -316,15 +136,16 @@ const archivedProducts = products?.filter(product =>
   }
  };
 
-const handleUpdateProduct = async ({ 
+ const handleUpdateProduct = async ({ 
   productId, 
   formData 
-}: { 
+ }: { 
   productId: string; 
   formData: FormData 
-}) => {
+ }) => {
   try {
-    await updateProduct({ productId,updateData: formData }).unwrap();
+    // Send the update to the backend
+    await updateProduct({ productId, updateData: formData }).unwrap();
     refetch();
   } catch (error) {
     console.error("Failed to update product", error);
@@ -332,7 +153,7 @@ const handleUpdateProduct = async ({
     setIsEditModalOpen(false);
     setSelectedProduct(null);
   }
-};
+ };
 
  const handleViewProduct = (product: Product) => {
   setSelectedProduct(product);
@@ -376,17 +197,17 @@ const handleUpdateProduct = async ({
         <Header name="Products" />
         <div className="flex gap-2">
         <Link
-  href="/products/archive"
-  className="flex items-center bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded relative"
->
-  <ArchiveIcon className="w-5 h-5 mr-2" />
-  View Archive
-  {archivedProducts.length > 0 && (
-    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-      {archivedProducts.length}
-    </span>
-  )}
-</Link>
+          href="/products/archive"
+          className="flex items-center bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded relative"
+        >
+          <ArchiveIcon className="w-5 h-5 mr-2" />
+          View Archive
+          {archivedProducts.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+              {archivedProducts.length}
+            </span>
+          )}
+        </Link>
           <button
             className="flex items-center bg-blue-500 hover:bg-blue-700 text-gray-200 font-bold py-2 px-4 rounded"
             onClick={() => setIsCreateModalOpen(true)}
@@ -414,30 +235,30 @@ const handleUpdateProduct = async ({
 
       {/* Dropdown Menu */}
       {dropdownVisible === index && (
-  <div className="absolute top-8 w-24 font-semibold right-2 bg-white shadow rounded-md z-10">
-    <button
-      className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-      onClick={() => handleViewProduct(product)}
-    >
-      View
-    </button>
-    <button 
-      className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-      onClick={() => handleEditProduct(product)}
-    >
-      Edit
-    </button>
-    <button 
-      className="w-full px-4 py-2 text-sm text-red-500 hover:bg-red-100"
-      onClick={() => archivedIds.includes(product.productId) 
-        ? handleUnarchiveProduct(product.productId)
-        : handleArchiveProduct(product.productId)
-      }
-    >
-      {archivedIds.includes(product.productId) ? 'Unarchive' : 'Archive'}
-    </button>
-  </div>
-)}
+        <div className="absolute top-8 w-24 font-semibold right-2 bg-white shadow rounded-md z-10">
+          <button
+            className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => handleViewProduct(product)}
+          >
+            View
+          </button>
+          <button 
+            className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            onClick={() => handleEditProduct(product)}
+          >
+            Edit
+          </button>
+          <button 
+            className="w-full px-4 py-2 text-sm text-red-500 hover:bg-red-100"
+            onClick={() => archivedIds.includes(product.productId) 
+              ? handleUnarchiveProduct(product.productId)
+              : handleArchiveProduct(product.productId)
+            }
+          >
+            {archivedIds.includes(product.productId) ? 'Unarchive' : 'Archive'}
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col items-center">
        <Image
@@ -455,9 +276,9 @@ const handleUpdateProduct = async ({
         }}
        />
        <h3 className="text-lg text-gray-900 font-semibold">{product.name}</h3>
-       <p className="text-gray-800">${product.price.toFixed(2)}</p>
+       <p className="text-gray-800">{formatPrice(product)}</p>
        <div className="text-sm text-gray-600 mt-1">
-        Stock: {product.stockQuantity}
+        Stock: {formatStockDisplay(product)}
        </div>
        <div className="flex flex-row justify-center">
         <Rating rating={product.rating ?? 0} />
@@ -474,11 +295,12 @@ const handleUpdateProduct = async ({
     onCreate={handleCreateProduct}
    />
 
-   {/* PRODUCT VIEW MODAL */}
+   {/* PRODUCT VIEW MODAL - Now imported from separate file */}
    <ProductViewModal
     open={isViewModalOpen}
     handleClose={() => setIsViewModalOpen(false)}
     product={selectedProduct}
+    productUnits={productUnits}
    />
 
    {/* PRODUCT EDIT MODAL */}
@@ -488,7 +310,11 @@ const handleUpdateProduct = async ({
      setIsEditModalOpen(false);
      setSelectedProduct(null);
     }}
-    product={selectedProduct}
+    product={selectedProduct ? {
+      ...selectedProduct,
+      currency: selectedProduct.currency || 'USD', // Use database value or default
+      stockUnit: selectedProduct.stockUnit || getProductUnit(selectedProduct) // Use database value or fallback
+    } : null}
     onUpdate={handleUpdateProduct}
    />
   </div>
