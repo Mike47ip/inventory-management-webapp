@@ -355,17 +355,21 @@ const SalesPage = () => {
                       />
                     </div>
                     <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
-                    <div className="mt-1 flex flex-col space-y-1">
+                    <div className="mt-1 flex justify-between space-y-1">
                       <span className={`text-xs px-2 py-1 rounded-full self-start flex flex-col ${
                         product.stockQuantity > 0 
                           ? "bg-green-100 text-green-800" 
                           : "bg-red-100 text-red-800"
                       }`}>
-                        <span>Stock:</span>
-                        <span>{product.stockQuantity > 0 
-                          ? formatStock(product) 
-                          : "Out of stock"}</span>
-                      </span>
+<span>
+  {product.stockQuantity > 0 ? (
+    <>
+      <span className="font-bold">{product.stockQuantity}</span>
+      <span> {product.stockUnit || 'Units'}</span>
+    </>
+  ) : "Out of stock"}
+</span>
+</span>
                       <span className="text-sm font-semibold text-gray-900">
                         {formatPrice(product)}
                       </span>
