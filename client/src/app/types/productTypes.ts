@@ -8,6 +8,25 @@ export type ProductUnitsMap = {
   [productId: string]: string;
 };
 
+// types/ProductFormTypes.ts
+export type ProductFormData = {
+  name: string;
+  price: number;
+  currency: string;
+  stockQuantity: number;
+  stockUnit: string;
+  rating: number;
+  category: string;
+  image: File | null;
+};
+
+export type CreateProductModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreateProduct: (product: ProductFormData) => void;
+  onCreate: (formData: ProductFormData) => Promise<void>;
+};
+
 // Get default units by category
 export const getCategoryDefaultUnit = (category?: string): string => {
   if (!category) return "Units";

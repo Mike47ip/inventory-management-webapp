@@ -26,18 +26,9 @@ import { getGridColumns } from "./GridColumns";
 import useProductUnits from "./useProductUnits";
 import { SelectedProductInfo } from "../types/productTypes";
 import ProductDetailModal from "./ProductDetailModal";
+import { ProductFormData } from "../types/productTypes";
 
-// Type for product form data
-type ProductFormData = {
-  name: string;
-  price: number;
-  currency: string;
-  stockQuantity: number;
-  stockUnit: string;
-  rating: number;
-  category: string;
-  image: File | null;
-};
+
 
 const Inventory = () => {
   // Get dark mode state from Redux
