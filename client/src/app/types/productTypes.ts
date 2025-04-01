@@ -23,7 +23,7 @@ export type ProductFormData = {
 export type CreateProductModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onCreateProduct: (product: ProductFormData) => void;
+
   onCreate: (formData: ProductFormData) => Promise<void>;
 };
 

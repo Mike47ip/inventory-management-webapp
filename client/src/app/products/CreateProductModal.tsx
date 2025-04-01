@@ -23,7 +23,6 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
   isOpen,
   onClose,
   onCreate,
-  onCreateProduct
 }) => {
   console.log('CreateProductModal rendered, isOpen:', isOpen);
   // Get categories from context
@@ -43,7 +42,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    variant: "success" as const,
+    variant: "success" as "success" | "error", // or us
     productName: "" // Store product name for reference
   });
 
@@ -215,10 +214,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
       
       await onCreate(formData);
 
-      // Call onCreateProduct if provided to update local state
-      if (onCreateProduct) {
-        onCreateProduct(formData);
-      }
+
       
       // Show success message with stored product name
       showSuccessSnackbar(`Product "${productName}" created successfully!`, productName);
