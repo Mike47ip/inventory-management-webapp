@@ -419,7 +419,7 @@ const SalesPage = () => {
              )}
             </span>
            </span>
-           <span className=" text-lg font-semibold text-gray-900">
+           <span className=" text-md font-semibold text-gray-900">
             {formatPrice(product)}
            </span>
           </div>

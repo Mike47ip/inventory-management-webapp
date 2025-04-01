@@ -1,6 +1,3 @@
-/**
- * Comprehensive mapping of currency codes to their symbols
- */
 export const CURRENCY_SYMBOLS: { [key: string]: string } = {
   'GHC': '₵',   // Ghanaian Cedi
   'USD': '$',   // US Dollar
