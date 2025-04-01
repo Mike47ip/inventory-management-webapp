@@ -1,5 +1,5 @@
 // components/Snackbar.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle, AlertCircle, X, Info } from 'lucide-react';
 
 export type SnackbarVariant = 'success' | 'error' | 'info' | 'warning';
@@ -19,17 +19,34 @@ const Snackbar: React.FC<SnackbarProps> = ({
   duration = 5000,
   onClose
 }) => {
+  const [isExiting, setIsExiting] = useState(false);
+
   useEffect(() => {
     if (open && duration !== null) {
       const timer = setTimeout(() => {
-        onClose();
+        handleClose();
       }, duration);
 
       return () => {
         clearTimeout(timer);
       };
     }
-  }, [open, duration, onClose]);
+  }, [open, duration]);
+
+  // Reset exit state when opening
+  useEffect(() => {
+    if (open) {
+      setIsExiting(false);
+    }
+  }, [open]);
+
+  const handleClose = () => {
+    setIsExiting(true);
+    // Wait for animation to complete
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
 
   if (!open) return null;
 
@@ -62,15 +79,21 @@ const Snackbar: React.FC<SnackbarProps> = ({
   };
 
   return (
-    <div className="fixed right-4 bottom-4 z-50 animate-slide-up">
-      <div className={`flex items-center p-4 rounded-lg shadow-lg ${getVariantStyles()}`}>
+    <div className="fixed right-4 bottom-4 z-50">
+      <div 
+        className={`
+          flex items-center p-4 rounded-lg shadow-lg ${getVariantStyles()}
+          transition-all duration-300 ease-in-out
+          ${isExiting ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}
+        `}
+      >
         <div className="flex items-center">
           {getIcon()}
           <p className="font-medium">{message}</p>
         </div>
         <button
           className="ml-auto pl-3"
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Close notification"
         >
           <X className="h-4 w-4 text-gray-500 hover:text-gray-700" />

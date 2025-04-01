@@ -17,6 +17,7 @@ import PriceInput from "./PriceInput";
 import CurrencyInput from "./CurrencyInput";
 import StockQuantityInput from "./StockQuantityInput";
 import RatingInput from "./RatingInput";
+import Snackbar from "./Snackbar";
 
 const CreateProductModal: React.FC<CreateProductModalProps> = ({
   isOpen,
@@ -24,6 +25,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
   onCreate,
   onCreateProduct
 }) => {
+  console.log('CreateProductModal rendered, isOpen:', isOpen);
   // Get categories from context
   const { categories, addCategory } = useCategories();
   
@@ -37,9 +39,24 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
   const [stockUnits, setStockUnits] = useState<string[]>(INITIAL_STOCK_UNITS);
   const [currencies, setCurrencies] = useState<string[]>(INITIAL_CURRENCIES);
 
+  // Snackbar state that persists even when modal is closed
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    variant: "success" as const,
+    productName: "" // Store product name for reference
+  });
+
+  // Track if we should keep the snackbar after modal closes
+  const [shouldKeepSnackbar, setShouldKeepSnackbar] = useState(false);
+
   useEffect(() => {
     console.log("Current form data:", formData);
   }, [formData]);
+
+  useEffect(() => {
+    console.log('Snackbar state changed:', snackbar);
+  }, [snackbar]);
 
   // Generic change handler for form inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -152,6 +169,36 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Show success snackbar
+  const showSuccessSnackbar = (message: string, productName: string) => {
+    setShouldKeepSnackbar(true);
+    setSnackbar({
+      open: true,
+      message,
+      variant: "success",
+      productName
+    });
+  };
+
+  // Show error snackbar
+  const showErrorSnackbar = (message: string) => {
+    setSnackbar({
+      open: true,
+      message,
+      variant: "error" as const,
+      productName: ""
+    });
+  };
+
+  // Close snackbar
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({
+      ...prev,
+      open: false
+    }));
+    setShouldKeepSnackbar(false);
+  };
+
   // Form submission handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,6 +210,9 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
     setIsSubmitting(true);
     
     try {
+      // Save the product name before it gets reset
+      const productName = formData.name;
+      
       await onCreate(formData);
 
       // Call onCreateProduct if provided to update local state
@@ -170,16 +220,29 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
         onCreateProduct(formData);
       }
       
-      resetForm();
+      // Show success message with stored product name
+      showSuccessSnackbar(`Product "${productName}" created successfully!`, productName);
+      
+      // Close the modal after successful creation
+      handleModalCloseAfterSuccess();
+      
     } catch (error) {
       console.error("Error creating product:", error);
-    } finally {
+      showErrorSnackbar("Failed to create product. Please try again.");
       setIsSubmitting(false);
     }
   };
 
-  // Reset form to initial state
-  const resetForm = () => {
+  // Handle modal close after successful creation
+  const handleModalCloseAfterSuccess = () => {
+    // Reset the form data
+    resetFormOnly();
+    // Close the modal but keep the snackbar visible
+    onClose();
+  };
+
+  // Reset form data only (not snackbar)
+  const resetFormOnly = () => {
     // Clean up image preview URL if exists
     if (imagePreview) {
       URL.revokeObjectURL(imagePreview);
@@ -189,15 +252,40 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
     setFormData({...INITIAL_FORM_DATA as ProductFormData});
     setImagePreview(null);
     setErrors({});
+    setIsSubmitting(false);
   };
 
   // Close modal handler
   const handleClose = () => {
-    resetForm();
+    // Only reset the snackbar if we're not showing a success message
+    if (!shouldKeepSnackbar) {
+      setSnackbar({
+        open: false,
+        message: "",
+        variant: "success",
+        productName: ""
+      });
+    }
+    
+    resetFormOnly();
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    // When modal is closed but we still want to show snackbar
+    if (shouldKeepSnackbar && snackbar.open) {
+      return (
+        <Snackbar
+          open={snackbar.open}
+          message={snackbar.message}
+          variant={snackbar.variant}
+          onClose={handleSnackbarClose}
+          duration={6000}
+        />
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -300,6 +388,15 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
             </button>
           </div>
         </form>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          message={snackbar.message}
+          variant={snackbar.variant}
+          onClose={handleSnackbarClose}
+          duration={6000}
+        />
       </div>
     </div>
   );
