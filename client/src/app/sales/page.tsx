@@ -381,6 +381,9 @@ const SalesPage = () => {
             In Cart
            </div>
           )}
+
+
+      
           <div className="h-32 relative mb-2">
            <Image
             src={
@@ -396,7 +399,7 @@ const SalesPage = () => {
             }}
            />
           </div>
-          <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
+          <h3 className="font-medium text-gray-900 text-md truncate">{product.name}</h3>
           <div className="mt-1 flex justify-between space-y-1">
            <span
             className={`text-xs px-2 py-1 rounded-full self-start flex flex-col ${
@@ -416,10 +419,11 @@ const SalesPage = () => {
              )}
             </span>
            </span>
-           <span className="text-sm font-semibold text-gray-900">
+           <span className=" text-lg font-semibold text-gray-900">
             {formatPrice(product)}
            </span>
           </div>
+
          </div>
         );
        })}
@@ -436,18 +440,18 @@ const SalesPage = () => {
     </div>
 
     {/* Right side - Cart */}
-    <div className="w-full md:w-5/12 lg:w-4/12 bg-white rounded-lg shadow-md p-4 flex flex-col">
-     {/* Customer selection */}
-     <div className="mb-4">
-      <div className="flex justify-between items-center mb-2">
-       <h3 className="font-medium text-gray-900">Customer</h3>
-       <button
+    <div className="w-full md:w-5/12 lg:w-4/12 bg-white rounded-lg shadow-md flex flex-col h-screen sticky top-0">
+  {/* Customer selection */}
+  <div className="p-4 border-b">
+    <h3 className="font-medium text-gray-900 mb-2">Customer</h3>
+    <div className="flex justify-between items-center">
+      <button
         onClick={() => setShowCustomerSearch(!showCustomerSearch)}
         className="text-sm text-blue-600 hover:text-blue-800"
-       >
+      >
         {showCustomerSearch ? "Cancel" : selectedCustomer ? "Change" : "Select"}
-       </button>
-      </div>
+      </button>
+    </div>
 
       {showCustomerSearch ? (
        <div>
@@ -498,204 +502,210 @@ const SalesPage = () => {
      </div>
 
      {/* Cart items */}
+     <div className="p-4 overflow-y-auto flex-1 min-h-[250px] max-h-[400px]">
      <h3 className="font-medium text-gray-900 mb-2">Cart Items</h3>
-     <div className="flex-1 overflow-auto mb-4">
-      {cart.length === 0 ? (
-       <div className="text-center py-8 text-gray-500">
-        <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-        <p>Your cart is empty</p>
-        <p className="text-sm">Add products to get started</p>
-       </div>
-      ) : (
-       <ul className="divide-y divide-gray-200">
-        {cart.map((item) => (
-         <li key={item.product.productId} className="py-3">
+  {cart.length === 0 ? (
+    <div className="text-center py-8 text-gray-500">
+      <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+      <p>Your cart is empty</p>
+      <p className="text-sm">Add products to get started</p>
+    </div>
+  ) : (
+    <ul className="divide-y divide-gray-200">
+      {cart.map((item) => (
+        <li key={item.product.productId} className="py-3">
           <div className="flex justify-between">
-           <div className="flex-1">
-            <h4 className="font-medium text-gray-900">{item.product.name}</h4>
-            <p className="text-gray-500 text-sm">
-             {formatPrice(item.product)} ×
-             <span
-              className="cursor-pointer hover:text-blue-600 hover:underline"
-              onClick={(e) => {
-               e.stopPropagation();
-               // Focus the quantity input field when clicked
-               const inputEl = document.getElementById(
-                `quantity-${item.product.productId}`
-               );
-               if (inputEl) inputEl.focus();
-              }}
-             >
-              {item.quantity}
-             </span>
-            </p>
-           </div>
-           <div className="text-right">
-            <p className="font-medium">
-             {formatPrice({
-              ...item.product,
-              price: item.product.price * item.quantity,
-             })}
-            </p>
-            <div className="flex items-center mt-1">
-             <button
-              onClick={(e) => {
-               e.stopPropagation();
-               updateCartItemQuantity(
-                item.product.productId,
-                item.quantity - 1
-               );
-              }}
-              className="p-1 text-gray-400 hover:text-gray-700"
-             >
-              <Minus className="h-4 w-4" />
-             </button>
-             <input
-              id={`quantity-${item.product.productId}`}
-              type="number"
-              min="1"
-              max={item.product.stockQuantity}
-              value={item.quantity}
-              onChange={(e) => {
-               const newQuantity = parseInt(e.target.value, 10);
-               if (!isNaN(newQuantity)) {
-                updateCartItemQuantity(item.product.productId, newQuantity);
-               }
-              }}
-              className="mx-1 w-12 text-center border rounded-md p-1 text-sm"
-              onClick={(e) => e.stopPropagation()}
-             />
-             <button
-              onClick={(e) => {
-               e.stopPropagation();
-               updateCartItemQuantity(
-                item.product.productId,
-                item.quantity + 1
-               );
-              }}
-              className="p-1 text-gray-400 hover:text-gray-700"
-              disabled={item.quantity >= item.product.stockQuantity}
-             >
-              <Plus className="h-4 w-4" />
-             </button>
-             <button
-              onClick={(e) => {
-               e.stopPropagation();
-               removeFromCart(item.product.productId);
-              }}
-              className="ml-3 p-1 text-red-500 hover:text-red-700"
-             >
-              <Trash2 className="h-4 w-4" />
-             </button>
+            <div className="flex-1">
+              <h4 className="font-medium text-gray-900">{item.product.name}</h4>
+              <p className="text-gray-500 text-sm">
+                {formatPrice(item.product)} ×
+                <span
+                  className="cursor-pointer hover:text-blue-600 hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Focus the quantity input field when clicked
+                    const inputEl = document.getElementById(
+                      `quantity-${item.product.productId}`
+                    );
+                    if (inputEl) inputEl.focus();
+                  }}
+                >
+                  {item.quantity}
+                </span>
+              </p>
             </div>
-           </div>
+            <div className="text-right">
+              <p className="font-medium">
+                {formatPrice({
+                  ...item.product,
+                  price: item.product.price * item.quantity,
+                })}
+              </p>
+              <div className="flex items-center mt-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateCartItemQuantity(
+                      item.product.productId,
+                      item.quantity - 1
+                    );
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-700"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <input
+                  id={`quantity-${item.product.productId}`}
+                  type="number"
+                  min="1"
+                  max={item.product.stockQuantity}
+                  value={item.quantity}
+                  onChange={(e) => {
+                    const newQuantity = parseInt(e.target.value, 10);
+                    if (!isNaN(newQuantity)) {
+                      updateCartItemQuantity(item.product.productId, newQuantity);
+                    }
+                  }}
+                  className="mx-1 w-12 text-center border rounded-md p-1 text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateCartItemQuantity(
+                      item.product.productId,
+                      item.quantity + 1
+                    );
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-700"
+                  disabled={item.quantity >= item.product.stockQuantity}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFromCart(item.product.productId);
+                  }}
+                  className="ml-3 p-1 text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
-         </li>
-        ))}
-       </ul>
-      )}
-     </div>
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
 
-     {/* Cart summary */}
-     <div className="border-t border-gray-200 pt-4 space-y-2">
-      {/* Discount */}
-      <div className="flex items-center mb-2">
-       <label className="flex-1 text-gray-600">Discount (%):</label>
-       <input
+
+<div className="p-4 border-t bg-white !h-[3500px] overflow-y-auto">
+  {/* Cart summary */}
+  <div className="space-y-2">
+    {/* Discount */}
+    <div className="flex items-center mb-2">
+      <label className="flex-1 text-gray-600">Discount (%):</label>
+      <input
         type="number"
         min="0"
         max="100"
         value={discountPercent}
         onChange={(e) => setDiscountPercent(Number(e.target.value))}
         className="w-20 text-right border rounded-md p-1"
-       />
-      </div>
+      />
+    </div>
 
-      <div className="flex justify-between">
-       <span className="text-gray-600">Subtotal:</span>
-       <span>${subtotal.toFixed(2)}</span>
-      </div>
-      {discount > 0 && (
-       <div className="flex justify-between text-green-600">
+    <div className="flex justify-between">
+      <span className="text-gray-600">Subtotal:</span>
+      <span>${subtotal.toFixed(2)}</span>
+    </div>
+    
+    {discount > 0 && (
+      <div className="flex justify-between text-green-600">
         <span>Discount:</span>
         <span>-${discount.toFixed(2)}</span>
-       </div>
-      )}
-      <div className="flex justify-between">
-       <span className="text-gray-600">Tax (10%):</span>
-       <span>${tax.toFixed(2)}</span>
       </div>
-      <div className="flex justify-between font-bold text-lg border-t border-gray-200 pt-2">
-       <span>Total:</span>
-       <span>${total.toFixed(2)}</span>
-      </div>
-     </div>
+    )}
+    
+    <div className="flex justify-between">
+      <span className="text-gray-600">Tax (10%):</span>
+      <span>${tax.toFixed(2)}</span>
+    </div>
+    
+    <div className="flex justify-between font-bold text-lg border-t border-gray-200 pt-2">
+      <span>Total:</span>
+      <span>${total.toFixed(2)}</span>
+    </div>
+  </div>
 
-     {/* Payment method */}
-     <div className="mt-4">
-      <h3 className="font-medium text-gray-900 mb-2">Payment Method</h3>
-      <div className="flex space-x-2">
-       <button
+  {/* Payment method */}
+  <div className="mt-4">
+    <h3 className="font-medium text-gray-900 mb-2">Payment Method</h3>
+    <div className="flex space-x-2">
+      <button
         className={`flex-1 py-2 px-3 rounded-md ${
-         paymentMethod === "cash"
-          ? "bg-blue-600 text-white"
-          : "bg-gray-100 text-gray-800"
+          paymentMethod === "cash"
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 text-gray-800"
         }`}
         onClick={() => setPaymentMethod("cash")}
-       >
+      >
         Cash
-       </button>
-       <button
+      </button>
+      <button
         className={`flex-1 py-2 px-3 rounded-md flex items-center justify-center ${
-         paymentMethod === "card"
-          ? "bg-blue-600 text-white"
-          : "bg-gray-100 text-gray-800"
+          paymentMethod === "card"
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 text-gray-800"
         }`}
         onClick={() => setPaymentMethod("card")}
-       >
+      >
         <CreditCard className="h-4 w-4 mr-1" /> Card
-       </button>
-       <button
+      </button>
+      <button
         className={`flex-1 py-2 px-3 rounded-md ${
-         paymentMethod === "other"
-          ? "bg-blue-600 text-white"
-          : "bg-gray-100 text-gray-800"
+          paymentMethod === "other"
+            ? "bg-blue-600 text-white"
+            : "bg-gray-100 text-gray-800"
         }`}
         onClick={() => setPaymentMethod("other")}
-       >
+      >
         Other
-       </button>
-      </div>
-     </div>
+      </button>
+    </div>
+  </div>
 
-     {/* Note */}
-     <div className="mt-4">
-      <label htmlFor="note" className="block font-medium text-gray-900 mb-2">
-       Note
-      </label>
-      <textarea
-       id="note"
-       rows={2}
-       className="w-full border border-gray-300 rounded-md p-2"
-       placeholder="Add a note to this sale (optional)"
-       value={note}
-       onChange={(e) => setNote(e.target.value)}
-      ></textarea>
-     </div>
+  {/* Note */}
+  <div className="mt-4">
+    <label htmlFor="note" className="block font-medium text-gray-900 mb-2">
+      Note
+    </label>
+    <textarea
+      id="note"
+      rows={2}
+      className="w-full border border-gray-300 rounded-md p-2"
+      placeholder="Add a note to this sale (optional)"
+      value={note}
+      onChange={(e) => setNote(e.target.value)}
+    ></textarea>
+  </div>
 
-     {/* Process sale button */}
-     <button
-      onClick={processSale}
-      disabled={!canProcessSale}
-      className={`mt-4 w-full py-3 px-4 rounded-md font-medium ${
-       canProcessSale
+  {/* Process sale button */}
+  <button
+    onClick={processSale}
+    disabled={!canProcessSale}
+    className={`mt-4 w-full py-3 px-4 rounded-md font-medium ${
+      canProcessSale
         ? "bg-blue-600 text-white hover:bg-blue-700"
         : "bg-gray-300 text-gray-500 cursor-not-allowed"
-      } flex items-center justify-center`}
-     >
-      <Save className="h-5 w-5 mr-2" />
-      Process Sale
-     </button>
+    } flex items-center justify-center`}
+  >
+    <Save className="h-5 w-5 mr-2" />
+    Process Sale
+  </button>
+</div>
     </div>
    </div>
 
