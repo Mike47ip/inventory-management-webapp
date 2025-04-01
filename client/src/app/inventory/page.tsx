@@ -13,7 +13,6 @@ import {
 import {
   Product,
   useGetProductsQuery,
-  useCreateProductMutation,
   useUpdateProductFieldsMutation,
 } from "@/state/api";
 import { GridToolbar } from "@mui/x-data-grid";
@@ -26,7 +25,7 @@ import { getGridColumns } from "./GridColumns";
 import useProductUnits from "./useProductUnits";
 import { SelectedProductInfo } from "../types/productTypes";
 import ProductDetailModal from "./ProductDetailModal";
-import { ProductFormData } from "../types/productTypes";
+import { useNotificationHelpers } from "../common/NotificationManager";
 
 // Add a constant for localStorage key
 const LOCAL_STORAGE_FEATURED_PRODUCTS_KEY = "featuredProducts";
@@ -35,15 +34,16 @@ const Inventory = () => {
   // Get dark mode state from Redux
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
 
+  // Get notifications methods from the updated hook
+  const { showSuccess, showError, showInfo } = useNotificationHelpers();
+
   // State declarations
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [openRestockModal, setOpenRestockModal] = useState<boolean>(false);
   const [viewProductModal, setViewProductModal] = useState<boolean>(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [selectedViewProduct, setSelectedViewProduct] = useState<Product | null>(null);
   const [localProducts, setLocalProducts] = useState<Product[]>([]);
-
 
   const [featuredProducts, setFeaturedProducts] = useState<Set<string>>(() => {
     try {
@@ -57,18 +57,17 @@ const Inventory = () => {
     }
   });
 
-
-    // Save featured products to localStorage
-    useEffect(() => {
-      try {
-        localStorage.setItem(
-          LOCAL_STORAGE_FEATURED_PRODUCTS_KEY, 
-          JSON.stringify(Array.from(featuredProducts))
-        );
-      } catch (error) {
-        console.error("Error saving featured products to localStorage:", error);
-      }
-    }, [featuredProducts]);
+  // Save featured products to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        LOCAL_STORAGE_FEATURED_PRODUCTS_KEY, 
+        JSON.stringify(Array.from(featuredProducts))
+      );
+    } catch (error) {
+      console.error("Error saving featured products to localStorage:", error);
+    }
+  }, [featuredProducts]);
 
   // Filter mode: "all", "featured", "regular"
   const [filterMode, setFilterMode] = useState<string>("all");
@@ -90,7 +89,6 @@ const Inventory = () => {
   } = useGetProductsQuery();
 
   // Mutations
-  const [createProduct] = useCreateProductMutation();
   const [updateProductFields] = useUpdateProductFieldsMutation();
 
   // Update local products when fetched products change
@@ -216,6 +214,23 @@ const Inventory = () => {
     }
   }, []);
 
+  // Format units with quantities (handles pluralization)
+  const formatUnitsWithQuantity = useCallback((quantity: number, unit: string) => {
+    // For default units, handle pluralization
+    if (unit.toLowerCase() === 'units' || unit.toLowerCase() === 'pieces') {
+      return `${quantity} ${quantity === 1 ? unit.slice(0, -1) : unit}`;
+    }
+    
+    // For standard measurement units, don't pluralize
+    const standardUnits = ['kg', 'g', 'l', 'ml', 'oz', 'lb'];
+    if (standardUnits.includes(unit.toLowerCase())) {
+      return `${quantity} ${unit}`;
+    }
+    
+    // For other units, basic pluralization
+    return `${quantity} ${quantity === 1 ? unit : unit + 's'}`;
+  }, []);
+
   // Restock handler with individual quantities and auto-clear selection
   const handleRestockProducts = useCallback(async () => {
     try {
@@ -231,88 +246,71 @@ const Inventory = () => {
         return;
       }
 
-      await Promise.all(
-        productsToUpdate.map(async ({ id: productId, qty }) => {
-          const product = localProducts.find((p) => p.productId === productId);
-          if (!product) {
-            console.warn(`Product ${productId} not found`);
-            return;
-          }
+      // Show "Starting restock" notification
+      showInfo(`Restocking ${productsToUpdate.length} products...`);
 
-          const newStock = product.stockQuantity + qty;
+      // Sequential notification delay (ms) to create a cascade effect
+      const NOTIFICATION_DELAY = 400;
 
-          console.log("Updating product:", {
-            id: productId,
-            name: product.name,
-            from: product.stockQuantity,
-            to: newStock,
-            addedQuantity: qty,
-          });
+      // Process each product update sequentially for notifications
+      for (let i = 0; i < productsToUpdate.length; i++) {
+        const { id: productId, qty } = productsToUpdate[i];
+        const product = localProducts.find((p) => p.productId === productId);
+        
+        if (!product) {
+          console.warn(`Product ${productId} not found`);
+          continue;
+        }
 
-          // Use the dedicated fields update mutation
-          await updateProductFields({
-            productId,
-            updateData: { stockQuantity: newStock },
-          }).unwrap();
-        })
-      );
+        const newStock = product.stockQuantity + qty;
+        const productUnit = getProductUnit(product);
+        
+        console.log("Updating product:", {
+          id: productId,
+          name: product.name,
+          from: product.stockQuantity,
+          to: newStock,
+          addedQuantity: qty,
+          unit: productUnit
+        });
+
+        // Use the dedicated fields update mutation
+        await updateProductFields({
+          productId,
+          updateData: { stockQuantity: newStock },
+        }).unwrap();
+
+        // Show individual product restock notification with a staggered delay
+        setTimeout(() => {
+          showSuccess(
+            `Restocked ${product.name} with ${formatUnitsWithQuantity(qty, productUnit)}`,
+            5000 // Duration
+          );
+        }, i * NOTIFICATION_DELAY);
+      }
 
       await refetch();
       console.log("Restock completed successfully");
+
+      // Show a summary notification after individual notifications
+      setTimeout(() => {
+        const totalItems = productsToUpdate.reduce((sum, { qty }) => sum + qty, 0);
+        showInfo(
+          `Restock complete: ${productsToUpdate.length} products updated with ${totalItems} total items`, 
+          6000
+        );
+      }, productsToUpdate.length * NOTIFICATION_DELAY + 500);
 
       // Clear selection after successful restock
       setSelectedProductIds([]);
     } catch (error) {
       console.error("Restock failed:", error);
+      showError("Failed to restock products. Please try again.");
     } finally {
       handleCloseRestockModal();
       console.groupEnd();
     }
-  }, [productRestockQuantities, localProducts, updateProductFields, refetch, handleCloseRestockModal]);
-
-  // Handle API product creation
-  const handleApiCreateProduct = useCallback(async (formData: ProductFormData) => {
-    try {
-
-      // Prepare FormData for API
-      const apiFormData = new FormData();
-      apiFormData.append("name", formData.name);
-      apiFormData.append("price", formData.price.toString());
-      apiFormData.append("currency", formData.currency || "GHC"); // Add default
-      apiFormData.append("stockQuantity", formData.stockQuantity.toString());
-      apiFormData.append("stockUnit", formData.stockUnit || "Units"); // Add default
-      apiFormData.append("rating", (formData.rating || 0).toString());
-      apiFormData.append("category", formData.category);
-
-      if (formData.image) {
-        apiFormData.append("image", formData.image);
-      }
-
-      // Create product via API
-      const createdProduct = await createProduct(apiFormData).unwrap();
-      console.log("Created product response:", createdProduct);
-
-      // After creating the product, manually add it to local state 
-      // to ensure we have the currency until the next refetch
-      setLocalProducts(prevProducts => [
-        ...prevProducts,
-        {
-          ...createdProduct,
-          currency: formData.currency || "GHC", // Ensure currency is present
-          stockUnit: formData.stockUnit || "Units" // Ensure stockUnit is present
-        }
-      ]);
-
-      // Refetch to ensure we have the most up-to-date product list
-      await refetch();
-
-      // Close the modal
-      setIsCreateModalOpen(false);
-    } catch (error) {
-      console.error("Failed to create product", error);
-      // TODO: Add error handling (e.g., show error toast)
-    }
-  }, [createProduct, refetch]);
+  }, [productRestockQuantities, localProducts, updateProductFields, refetch, handleCloseRestockModal, getProductUnit, formatUnitsWithQuantity, showSuccess, showError, showInfo]);
 
   // Check if any product has a restock quantity > 0
   const hasProductsToRestock = useMemo(() => {
@@ -354,7 +352,7 @@ const Inventory = () => {
   );
 
   return (
-    <Box m="1.5rem 2.5rem">
+    <Box className="m-4 sm:m-6 lg:m-10" >
       <Box display="flex" flexDirection="column" gap={2}>
         <Box className="flex justify-between items-center gap-4">
           <TextField
@@ -423,7 +421,6 @@ const Inventory = () => {
           sx={dataGridStyles}
         />
       </Box>
-
 
       {/* Restock Modal */}
       <RestockModal 

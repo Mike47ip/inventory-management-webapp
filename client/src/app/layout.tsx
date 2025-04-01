@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import DashboardWrapper from "./dashboardWrapper";
 import { CategoryProvider } from "./(context)/CategoryContext";
+import { NotificationProvider } from "./common/NotificationManager";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +21,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <CategoryProvider>
-          <DashboardWrapper>{children}</DashboardWrapper>
+          <NotificationProvider maxVisible={3} position="bottom-right">
+            <DashboardWrapper>{children}</DashboardWrapper>
+          </NotificationProvider>
         </CategoryProvider>
       </body>
     </html>

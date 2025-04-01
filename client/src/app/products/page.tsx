@@ -218,9 +218,9 @@ const Products = () => {
    </div>
 
    {/* HEADER BAR */}
-   <div className="flex justify-between items-center mb-6">
+   <div className="flex flex-col md:flex-row text-xs lg:text-base md:justify-between items-center mb-6">
     <Header name="Products" />
-    <div className="flex gap-2">
+    <div className="flex justify-between items-center gap-2">
      <Link
       href="/products/archive"
       className="flex items-center bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded relative"
@@ -243,7 +243,7 @@ const Products = () => {
    </div>
 
    {/* BODY PRODUCTS LIST */}
-   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 justify-between">
+   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 justify-between">
     {activeProducts?.map((product, index) => (
      <div
       key={product.productId}
