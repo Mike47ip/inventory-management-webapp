@@ -7,7 +7,8 @@ import {
   FORM_STYLES,
   INITIAL_FORM_DATA,
   INITIAL_STOCK_UNITS,
-  INITIAL_CURRENCIES
+  INITIAL_CURRENCIES,
+  saveCustomStockUnit 
 } from "../constraints/ProductConstants";
 
 // Import components
@@ -127,13 +128,26 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
   };
 
   // Handle adding a new stock unit
-  const handleAddStockUnit = (newUnit: string) => {
-    setStockUnits(prev => [...prev, newUnit]);
-    setFormData({
-      ...formData,
-      stockUnit: newUnit
-    });
-  };
+// Handle adding a new stock unit
+const handleAddStockUnit = (newUnit: string) => {
+  // Save the new unit to localStorage
+  saveCustomStockUnit(newUnit);
+
+  // Update local state
+  setStockUnits(prev => {
+    // Ensure no duplicates
+    if (!prev.includes(newUnit)) {
+      return [...prev, newUnit];
+    }
+    return prev;
+  });
+
+  // Update form data with the new stock unit
+  setFormData({
+    ...formData,
+    stockUnit: newUnit
+  });
+};
 
   // Handle adding a new currency
   const handleAddCurrency = (newCurrency: string) => {

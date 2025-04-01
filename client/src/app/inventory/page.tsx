@@ -28,7 +28,8 @@ import { SelectedProductInfo } from "../types/productTypes";
 import ProductDetailModal from "./ProductDetailModal";
 import { ProductFormData } from "../types/productTypes";
 
-
+// Add a constant for localStorage key
+const LOCAL_STORAGE_FEATURED_PRODUCTS_KEY = "featuredProducts";
 
 const Inventory = () => {
   // Get dark mode state from Redux
@@ -41,8 +42,33 @@ const Inventory = () => {
   const [viewProductModal, setViewProductModal] = useState<boolean>(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [selectedViewProduct, setSelectedViewProduct] = useState<Product | null>(null);
-  const [featuredProducts, setFeaturedProducts] = useState<Set<string>>(new Set());
   const [localProducts, setLocalProducts] = useState<Product[]>([]);
+
+
+  const [featuredProducts, setFeaturedProducts] = useState<Set<string>>(() => {
+    try {
+      const storedFeaturedProducts = localStorage.getItem(LOCAL_STORAGE_FEATURED_PRODUCTS_KEY);
+      return storedFeaturedProducts 
+        ? new Set(JSON.parse(storedFeaturedProducts)) 
+        : new Set();
+    } catch (error) {
+      console.error("Error loading featured products from localStorage:", error);
+      return new Set();
+    }
+  });
+
+
+    // Save featured products to localStorage
+    useEffect(() => {
+      try {
+        localStorage.setItem(
+          LOCAL_STORAGE_FEATURED_PRODUCTS_KEY, 
+          JSON.stringify(Array.from(featuredProducts))
+        );
+      } catch (error) {
+        console.error("Error saving featured products to localStorage:", error);
+      }
+    }, [featuredProducts]);
 
   // Filter mode: "all", "featured", "regular"
   const [filterMode, setFilterMode] = useState<string>("all");
@@ -70,13 +96,9 @@ const Inventory = () => {
   // Update local products when fetched products change
   useEffect(() => {
     if (products && products.length > 0) {
-      // Log a sample product to check structure
-      console.log("Sample product from API:", products[0]);
-      
-      // Set local products, ensuring each has a currency
       const productsWithDefaults = products.map(product => ({
         ...product,
-        currency: product.currency || 'GHC'  // Default if missing
+        currency: product.currency || 'GHC'
       }));
       
       setLocalProducts(productsWithDefaults);

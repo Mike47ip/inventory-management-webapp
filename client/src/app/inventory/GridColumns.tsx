@@ -68,6 +68,9 @@ export const getGridColumns = ({
               size="small"
               sx={{
                 color: isFeatured ? "gold" : "gray",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
                 "&:hover": {
                   bgcolor: "rgba(255, 215, 0, 0.1)",
                 },
