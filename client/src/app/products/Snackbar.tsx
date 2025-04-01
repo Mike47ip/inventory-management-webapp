@@ -1,5 +1,4 @@
-// components/Snackbar.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { CheckCircle, AlertCircle, X, Info } from 'lucide-react';
 
 export type SnackbarVariant = 'success' | 'error' | 'info' | 'warning';
@@ -21,17 +20,23 @@ const Snackbar: React.FC<SnackbarProps> = ({
 }) => {
   const [isExiting, setIsExiting] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setIsExiting(true);
+    // Wait for animation to complete
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  }, [onClose]);
+
   useEffect(() => {
     if (open && duration !== null) {
-      const timer = setTimeout(() => {
-        handleClose();
-      }, duration);
+      const timer = setTimeout(handleClose, duration);
 
       return () => {
         clearTimeout(timer);
       };
     }
-  }, [open, duration]);
+  }, [open, duration, handleClose]);
 
   // Reset exit state when opening
   useEffect(() => {
@@ -39,14 +44,6 @@ const Snackbar: React.FC<SnackbarProps> = ({
       setIsExiting(false);
     }
   }, [open]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    // Wait for animation to complete
-    setTimeout(() => {
-      onClose();
-    }, 300);
-  };
 
   if (!open) return null;
 
