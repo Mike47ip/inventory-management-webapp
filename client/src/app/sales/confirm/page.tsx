@@ -27,7 +27,7 @@ import {
   X
 } from "lucide-react";
 import Header from "@/app/(components)/Header";
-import SalesGrid from "@/app/(components)/SalesGrid";
+import SalesGrid from "./salesGrid";
 
 // Define types
 type Product = {
@@ -77,7 +77,7 @@ export default function SalesConfirmPage(): React.ReactElement {
   const [saleData, setSaleData] = useState<SaleData>(() => {
     if (typeof window !== 'undefined') {
       const storedData = localStorage.getItem('pendingSale');
-      const parsedData = storedData ? JSON.parse(storedData) : {
+      const parsedData: SaleData = storedData ? JSON.parse(storedData) : {
         customer: null,
         items: [],
         subtotal: 0,
@@ -93,7 +93,7 @@ export default function SalesConfirmPage(): React.ReactElement {
       if (parsedData.items && parsedData.items.length > 0) {
         console.log('First item price:', parsedData.items[0].product.price);
         console.log('First item quantity:', parsedData.items[0].quantity);
-        console.log('All items:', parsedData.items.map(item => ({
+        console.log('All items:', parsedData.items.map((item: CartItem) => ({
           id: item.product.productId,
           name: item.product.name,
           price: item.product.price,
@@ -218,7 +218,7 @@ export default function SalesConfirmPage(): React.ReactElement {
     console.log('Items count:', saleData.items.length);
     
     if (saleData.items.length > 0) {
-      saleData.items.forEach((item, index) => {
+      saleData.items.forEach((item: CartItem, index: number) => {
         console.log(`Item ${index + 1}:`, {
           name: item.product.name,
           price: item.product.price,
