@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
  Search,
  ShoppingCart,
@@ -70,7 +71,9 @@ const mockCustomers: Customer[] = [
  { id: "3", name: "Bob Johnson", email: "bob@example.com" },
 ];
 
-const SalesPage = () => {
+export default function SalesPage() {
+ const router = useRouter();
+ 
  // Get categories from context
  const { categories } = useCategories();
 
@@ -219,10 +222,10 @@ const SalesPage = () => {
   [subtotal, discount, tax]
  );
 
- // Process sale
+ // Process sale - Modified to redirect to confirmation page
  const processSale = () => {
-  // Will be connected to API later
-  console.log({
+  // Store the pending sale data in localStorage
+  const pendingSaleData = {
    customer: selectedCustomer,
    items: cart,
    subtotal,
@@ -231,28 +234,13 @@ const SalesPage = () => {
    total,
    paymentMethod,
    note,
-  });
-
-  // Show success notification
-  setNotification({
-   show: true,
-   message: "Sale processed successfully!",
-   type: "success",
-  });
-
-  // Auto-hide notification after 5 seconds
-  setTimeout(() => {
-   setNotification((prev) => ({ ...prev, show: false }));
-  }, 5000);
-
-  // Reset state after sale
-  setCart([]);
-  setSelectedCustomer(null);
-  setNote("");
-  setDiscountPercent(0);
-  setPaymentMethod("cash");
-  setSearchTerm("");
-  setCategoryFilter("");
+  };
+  
+  // Save to localStorage so the confirmation page can access it
+  localStorage.setItem('pendingSale', JSON.stringify(pendingSaleData));
+  
+  // Navigate to the confirmation page
+  router.push('/sales/confirm');
  };
 
  // Check if we can proceed with sale
@@ -802,6 +790,4 @@ const SalesPage = () => {
    )}
   </div>
  );
-};
-
-export default SalesPage;
+}
