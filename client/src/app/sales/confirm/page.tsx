@@ -267,6 +267,7 @@ export default function SalesConfirmPage(): React.ReactElement {
         <Paper elevation={3} className="mb-6">
           {/* Order Items Table - Using the extracted SalesGrid component */}
           <SalesGrid 
+      
             saleData={saleData} 
             onViewProduct={handleViewProduct} 
           />

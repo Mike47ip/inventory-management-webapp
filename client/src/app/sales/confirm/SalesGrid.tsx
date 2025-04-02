@@ -251,7 +251,7 @@ const SalesGrid: React.FC<SalesGridProps> = ({ saleData, onViewProduct }) => {
   return (
     <Box sx={{ height: 'calc(100vh - 380px)', minHeight: '400px', width: '100%' }}>
       <DataGrid
-      
+      className="font-nunito font-extrabold"
         rows={rows}
         columns={columns}
         disableRowSelectionOnClick
