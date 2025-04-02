@@ -272,7 +272,7 @@ export default function SalesConfirmPage(): React.ReactElement {
           />
           
           {/* Order Summary */}
-          <Box className="p-4 border-t">
+          <Box className="p-4 border-t font-mono">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
                 <Typography variant="subtitle2" className="text-gray-600 mb-1">

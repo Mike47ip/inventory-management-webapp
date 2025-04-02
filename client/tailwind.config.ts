@@ -62,6 +62,13 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'sans': ['var(--font-inter)', 'ui-sans-serif', 'system-ui'],
+        'inter': ['var(--font-inter)'],
+        'roboto': ['var(--font-roboto)'],
+        'open-sans': ['var(--font-open-sans)'],
+        'nunito': ['var(--font-nunito)'],
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":
