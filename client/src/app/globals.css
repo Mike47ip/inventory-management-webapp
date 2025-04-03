@@ -91,3 +91,8 @@ body,
 .animate-slide-out-left {
   animation: slideOutLeft 0.3s ease-in forwards;
 }
+
+
+#Typo {
+  font-family: 'Inter', sans-serif !important;
+}
