@@ -27,7 +27,7 @@ import {
   X
 } from "lucide-react";
 import Header from "@/app/(components)/Header";
-import SalesGrid from "./salesGrid";
+import SalesGrid from "./SalesGrid";
 
 // Define types
 type Product = {

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Box, Button, Chip } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import { CreditCard, Eye } from "lucide-react";
+import { styled } from '@mui/material/styles';
 
 // Define types
 type Product = {
@@ -60,6 +61,47 @@ interface SalesGridProps {
   saleData: SaleData;
   onViewProduct: (product: Product) => void;
 }
+
+// Create a styled DataGrid component with Inter font
+const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+  '&&': {
+    fontFamily: 'var(--font-inter)',
+    fontSize: '0.875rem',
+    
+    // Apply to all cells
+    '& .MuiDataGrid-cell': {
+      fontFamily: 'var(--font-inter)',
+      fontWeight: 400,
+    },
+    
+    // Apply to column headers
+    '& .MuiDataGrid-columnHeaders': {
+      fontFamily: 'var(--font-inter)',
+      fontWeight: 500,
+    },
+    
+    // Apply to footer
+    '& .MuiDataGrid-footerContainer': {
+      fontFamily: 'var(--font-inter)',
+    },
+    
+    // Apply to any Typography components inside
+    '& .MuiTypography-root': {
+      fontFamily: 'var(--font-inter)',
+    },
+    
+    // Apply to any buttons inside
+    '& .MuiButton-root': {
+      fontFamily: 'var(--font-inter)',
+    },
+    
+    // Apply to any chip components
+    '& .MuiChip-label': {
+      fontFamily: 'var(--font-inter)',
+      fontWeight: 400,
+    }
+  }
+}));
 
 const SalesGrid: React.FC<SalesGridProps> = ({ saleData, onViewProduct }) => {
   // Currency symbols mapping
@@ -121,7 +163,7 @@ const SalesGrid: React.FC<SalesGridProps> = ({ saleData, onViewProduct }) => {
       headerName: 'Product', 
       flex: 2,
       renderCell: (params: GridRenderCellParams) => (
-        <div className="flex flex-col">
+        <div className="flex flex-col font-inter">
           <span className="font-medium">{params.row.name}</span>
           <span className="text-xs text-gray-500">{params.row.productId}</span>
         </div>
@@ -191,15 +233,19 @@ const SalesGrid: React.FC<SalesGridProps> = ({ saleData, onViewProduct }) => {
       renderCell: (params) => {
         const method = params.value || 'cash';
         const icon = method === 'cash' 
-          ? <span className="mr-1">💵</span> 
+          ? (
+              <div className="flex justify-center items-center font-inter text-md">
+                <span className="mr-1 text-[1.5rem]">💵</span>
+                <span>{getPaymentMethodDisplay(method)}</span>
+              </div>
+            ) 
           : method === 'card' 
-            ? <CreditCard className="h-4 w-4 mr-1" /> 
-            : <span className="mr-1">📄</span>;
-        
+            ? <div className="flex items-center font-inter text-md"><CreditCard className="h-4 w-4 mr-1" /><span>{getPaymentMethodDisplay(method)}</span></div> 
+            : <div className="flex items-center font-inter text-md"><span className="mr-1">📄</span><span>{getPaymentMethodDisplay(method)}</span></div>;
+    
         return (
           <div className="flex items-center justify-center">
             {icon}
-            <span>{getPaymentMethodDisplay(method)}</span>
           </div>
         );
       }
@@ -250,8 +296,30 @@ const SalesGrid: React.FC<SalesGridProps> = ({ saleData, onViewProduct }) => {
 
   return (
     <Box sx={{ height: 'calc(100vh - 380px)', minHeight: '400px', width: '100%' }}>
-      <DataGrid
-      className="font-nunito font-extrabold"
+      {/* Add global override style */}
+      <style jsx global>{`
+        /* MUI DataGrid font overrides */
+        .MuiDataGrid-root, 
+        .MuiDataGrid-columnHeaders,
+        .MuiDataGrid-cell,
+        .MuiDataGrid-footerContainer,
+        .MuiDataGrid-root .MuiButtonBase-root,
+        .MuiDataGrid-root .MuiChip-root,
+        .MuiDataGrid-root .MuiTypography-root {
+          font-family: var(--font-inter) !important;
+        }
+        
+        .MuiDataGrid-columnHeaders {
+          font-weight: 500 !important;
+        }
+        
+        .MuiDataGrid-cell {
+          font-weight: 400 !important;
+        }
+      `}</style>
+      
+      <StyledDataGrid
+        className="font-inter"
         rows={rows}
         columns={columns}
         disableRowSelectionOnClick
@@ -265,6 +333,23 @@ const SalesGrid: React.FC<SalesGridProps> = ({ saleData, onViewProduct }) => {
         pageSizeOptions={[10, 25, 50, 100]}
         onRowClick={(params) => {
           console.log('Row clicked:', params.row);
+        }}
+        sx={{
+          // Additional inline sx props to override the default styles
+          '& .MuiDataGrid-main': {
+            fontFamily: 'var(--font-inter) !important',
+             fontSize: '1rem', // Increase cell font size
+          },
+          '& .MuiDataGrid-cell, & .MuiDataGrid-cellContent': {
+            fontFamily: 'var(--font-inter) !important',
+          },
+          '& .MuiDataGrid-columnHeaderTitle': {
+            fontFamily: 'var(--font-inter) !important',
+            fontWeight: 500,
+          },
+          '& .MuiTablePagination-root': {
+            fontFamily: 'var(--font-inter) !important',
+          }
         }}
       />
     </Box>
