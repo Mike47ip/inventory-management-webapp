@@ -128,7 +128,7 @@ export default function SalesConfirmPage(): React.ReactElement {
     CAD: "C$",
   };
 
-  // Format price with currency
+  // Format price with currency, space, and thousands separator
   const formatPrice = (price: number | undefined | null, currency: string = 'GHC'): string => {
     // Handle undefined or null price values
     const safePrice = price !== undefined && price !== null ? price : 0;
@@ -136,7 +136,14 @@ export default function SalesConfirmPage(): React.ReactElement {
     // Get symbol directly from the currencySymbols object
     const symbol = currencySymbols[currency as keyof typeof currencySymbols] || currency;
     
-    return `${symbol}${safePrice.toFixed(2)}`;
+    // Format number with comma as thousands separator and 2 decimal places
+    const formattedNumber = safePrice.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    // Return with a space between currency symbol and amount
+    return `${symbol} ${formattedNumber}`;
   };
 
   // Get payment method display name
@@ -184,6 +191,9 @@ export default function SalesConfirmPage(): React.ReactElement {
       
       // Clear the pending sale data
       localStorage.removeItem('pendingSale');
+      
+      // Add a flag in localStorage to indicate a successful sale completion
+      localStorage.setItem('saleCompleted', 'true');
       
       // Show success dialog
       setOpenSuccessDialog(true);
@@ -233,7 +243,7 @@ export default function SalesConfirmPage(): React.ReactElement {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header name="Confirm Sale" />
       
-      <div className="container mx-auto p-4 md:p-6 flex-1">
+      <div className="container mx-auto p-3 flex-1">
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-4">
           <Button 
@@ -267,104 +277,103 @@ export default function SalesConfirmPage(): React.ReactElement {
         <Paper elevation={3} className="mb-6">
           {/* Order Items Table - Using the extracted SalesGrid component */}
           <SalesGrid 
-      
             saleData={saleData} 
             onViewProduct={handleViewProduct} 
           />
           
           {/* Order Summary */}
-<Box className="p-4 border-t">
-  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-    <div>
-      <Typography 
-        variant="subtitle2" 
-        className="text-gray-600 mb-1 !font-inter" 
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        Subtotal
-      </Typography>
-      <Typography 
-        variant="h6"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-        className="!font-inter"
-      >
-        {formatPrice(saleData.subtotal)}
-      </Typography>
-      <Typography 
-        variant="caption" 
-        className="text-gray-500 !font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        ({saleData.items.length} items)
-      </Typography>
-    </div>
-    
-    <div>
-      <Typography 
-        variant="subtitle2" 
-        className="text-gray-600 mb-1 !font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        Discount ({saleData.discount > 0 ? `${(saleData.discount / saleData.subtotal * 100).toFixed(1)}%` : '0%'})
-      </Typography>
-      <Typography 
-        variant="h6" 
-        className="text-green-600 !font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        -{formatPrice(saleData.discount)}
-      </Typography>
-    </div>
-    
-    <div>
-      <Typography 
-        variant="subtitle2" 
-        className="text-gray-600 mb-1 !font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        Tax (10%)
-      </Typography>
-      <Typography 
-        variant="h6"
-        className="!font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        {formatPrice(saleData.tax)}
-      </Typography>
-      <Typography 
-        variant="caption" 
-        className="text-gray-500 !font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        Applied after discount
-      </Typography>
-    </div>
-    
-    <div>
-      <Typography 
-        variant="subtitle2" 
-        className="text-gray-600 mb-1 !font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        Grand Total
-      </Typography>
-      <Typography 
-        variant="h6" 
-        className="text-blue-700 font-bold !font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        {formatPrice(saleData.total)}
-      </Typography>
-      <Typography 
-        variant="caption" 
-        className="text-blue-600 font-medium !font-inter"
-        sx={{ fontFamily: 'var(--font-inter) !important' }}
-      >
-        {getPaymentMethodDisplay(saleData.paymentMethod)}
-      </Typography>
-    </div>
-  </div>
-</Box>
+          <Box className="p-4 border-t">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div>
+                <Typography 
+                  variant="subtitle2" 
+                  className="text-gray-600 mb-1 !font-inter" 
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  Subtotal
+                </Typography>
+                <Typography 
+                  variant="h6"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                  className="!font-inter"
+                >
+                  {formatPrice(saleData.subtotal)}
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  className="text-gray-500 !font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  ({saleData.items.length} items)
+                </Typography>
+              </div>
+              
+              <div>
+                <Typography 
+                  variant="subtitle2" 
+                  className="text-gray-600 mb-1 !font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  Discount ({saleData.discount > 0 ? `${(saleData.discount / saleData.subtotal * 100).toFixed(1)}%` : '0%'})
+                </Typography>
+                <Typography 
+                  variant="h6" 
+                  className="text-green-600 !font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  -{formatPrice(saleData.discount)}
+                </Typography>
+              </div>
+              
+              <div>
+                <Typography 
+                  variant="subtitle2" 
+                  className="text-gray-600 mb-1 !font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  Tax (10%)
+                </Typography>
+                <Typography 
+                  variant="h6"
+                  className="!font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  {formatPrice(saleData.tax)}
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  className="text-gray-500 !font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  Applied after discount
+                </Typography>
+              </div>
+              
+              <div>
+                <Typography 
+                  variant="subtitle2" 
+                  className="text-gray-600 mb-1 !font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  Grand Total
+                </Typography>
+                <Typography 
+                  variant="h6" 
+                  className="text-blue-700 font-bold !font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  {formatPrice(saleData.total)}
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  className="text-blue-600 font-medium !font-inter"
+                  sx={{ fontFamily: 'var(--font-inter) !important' }}
+                >
+                  {getPaymentMethodDisplay(saleData.paymentMethod)}
+                </Typography>
+              </div>
+            </div>
+          </Box>
         </Paper>
         
         {/* Notes and Actions */}
@@ -471,7 +480,7 @@ export default function SalesConfirmPage(): React.ReactElement {
                 <div className="border-b pb-2">
                   <Typography variant="subtitle2" color="textSecondary">Stock</Typography>
                   <Typography variant="body1">
-                    {selectedProduct.stockQuantity} {selectedProduct.stockUnit || 'Units'}
+                    {selectedProduct.stockQuantity.toLocaleString()} {selectedProduct.stockUnit || 'Units'}
                   </Typography>
                 </div>
 

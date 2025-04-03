@@ -120,6 +120,12 @@ const SalesGrid: React.FC<SalesGridProps> = ({ saleData, onViewProduct }) => {
     
     // Get symbol directly from the currencySymbols object
     const symbol = currencySymbols[currency as keyof typeof currencySymbols] || currency;
+
+        // Format number with comma as thousands separator and 2 decimal places
+    const formattedNumber = safePrice.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
     
     return `${symbol}${safePrice.toFixed(2)}`;
   };
