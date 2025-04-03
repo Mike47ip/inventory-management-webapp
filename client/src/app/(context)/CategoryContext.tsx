@@ -3,7 +3,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 // Initial category options
-const initialCategoryOptions = [
+const initialCategoryOptions: string[] = [
   "Electronics",
   "Clothing",
   "Home & Kitchen",
@@ -17,6 +17,8 @@ const initialCategoryOptions = [
   "Food & Beverage",
   "Other"
 ];
+
+const LOCAL_STORAGE_CATEGORIES_KEY = "productCategories";
 
 type CategoryContextType = {
   categories: string[];
@@ -48,18 +50,48 @@ export const useCategories = () => {
 
 // Provider component
 export const CategoryProvider = ({ children }: { children: ReactNode }) => {
-  console.log("CategoryProvider rendering");
+  // Load categories from localStorage on initial render
+  const loadCategoriesFromStorage = () => {
+    try {
+      const storedCategories = localStorage.getItem(LOCAL_STORAGE_CATEGORIES_KEY);
+      if (storedCategories) {
+        const parsedCategories: string[] = JSON.parse(storedCategories);
+        // Create a unique array of categories
+        const uniqueCategories = Array.from(new Set([
+          ...initialCategoryOptions, 
+          ...parsedCategories
+        ])).filter(Boolean) as string[];
+        return uniqueCategories;
+      }
+      return initialCategoryOptions;
+    } catch (error) {
+      console.error("Error loading categories from localStorage:", error);
+      return initialCategoryOptions;
+    }
+  };
+
+  const [categories, setCategories] = useState<string[]>(() => loadCategoriesFromStorage());
   
-  const [categories, setCategories] = useState<string[]>(initialCategoryOptions);
-  
-  // Debug effect to track categories changes
+  // Save categories to localStorage whenever they change
   useEffect(() => {
-    console.log("Categories updated:", categories);
+    try {
+      // Filter out initial categories to only save newly added ones
+      const categoriesToStore = categories.filter(
+        category => !initialCategoryOptions.includes(category)
+      );
+      
+      localStorage.setItem(
+        LOCAL_STORAGE_CATEGORIES_KEY, 
+        JSON.stringify(categoriesToStore)
+      );
+    } catch (error) {
+      console.error("Error saving categories to localStorage:", error);
+    }
   }, [categories]);
 
   const updateCategories = (newCategories: string[]) => {
     console.log("updateCategories called with:", newCategories);
-    setCategories(newCategories);
+    setCategories([...initialCategoryOptions, ...newCategories]);
   };
 
   const addCategory = (category: string) => {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
  Search,
  ShoppingCart,
@@ -44,6 +45,17 @@ type Customer = {
  phone?: string;
 };
 
+type PendingSaleData = {
+  customer: Customer | null;
+  items: CartItem[];
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  paymentMethod: string;
+  note: string;
+};
+
 // Currency symbols mapping
 const currencySymbols = {
  GHC: "₵",
@@ -70,22 +82,106 @@ const mockCustomers: Customer[] = [
  { id: "3", name: "Bob Johnson", email: "bob@example.com" },
 ];
 
-const SalesPage = () => {
+export default function SalesPage() {
+ console.log("========== SalesPage COMPONENT MOUNTING ==========");
+ 
+ const router = useRouter();
+ 
  // Get categories from context
  const { categories } = useCategories();
 
- // State declarations
+ // State declarations - Initialize cart from localStorage if available
+ const [cart, setCart] = useState<CartItem[]>(() => {
+  console.log("Initializing cart state");
+  // Try to initialize from localStorage if available
+  if (typeof window !== 'undefined') {
+    const pendingSaleData = localStorage.getItem('pendingSale');
+    if (pendingSaleData) {
+      try {
+        const parsedData: PendingSaleData = JSON.parse(pendingSaleData);
+        console.log('Initializing cart from localStorage:', parsedData.items.length, 'items');
+        console.log('Cart items from localStorage:', parsedData.items.map(item => 
+          `${item.product.name} (${item.quantity}x at ${item.product.price})`).join(', '));
+        return parsedData.items;
+      } catch (error) {
+        console.error('Error parsing pending sale data during initialization:', error);
+      }
+    } else {
+      console.log('No pendingSale data found in localStorage during initialization');
+    }
+  }
+  return []; // Default empty cart
+ });
+ 
+ console.log("Initial cart state after initialization:", cart.length, "items");
+ 
  const [searchTerm, setSearchTerm] = useState("");
  const [categoryFilter, setCategoryFilter] = useState("");
- const [cart, setCart] = useState<CartItem[]>([]);
- const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-  null
- );
+ 
+ const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(() => {
+  if (typeof window !== 'undefined') {
+    const pendingSaleData = localStorage.getItem('pendingSale');
+    if (pendingSaleData) {
+      try {
+        const parsedData: PendingSaleData = JSON.parse(pendingSaleData);
+        return parsedData.customer;
+      } catch (error) {
+        console.error('Error parsing customer data during initialization:', error);
+      }
+    }
+  }
+  return null;
+ });
+ 
  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
  const [showCustomerSearch, setShowCustomerSearch] = useState(false);
- const [paymentMethod, setPaymentMethod] = useState("cash");
- const [note, setNote] = useState("");
- const [discountPercent, setDiscountPercent] = useState(0);
+ 
+ const [paymentMethod, setPaymentMethod] = useState(() => {
+  if (typeof window !== 'undefined') {
+    const pendingSaleData = localStorage.getItem('pendingSale');
+    if (pendingSaleData) {
+      try {
+        const parsedData: PendingSaleData = JSON.parse(pendingSaleData);
+        return parsedData.paymentMethod || "cash";
+      } catch (error) {
+        console.error('Error parsing payment method during initialization:', error);
+      }
+    }
+  }
+  return "cash";
+ });
+ 
+ const [note, setNote] = useState(() => {
+  if (typeof window !== 'undefined') {
+    const pendingSaleData = localStorage.getItem('pendingSale');
+    if (pendingSaleData) {
+      try {
+        const parsedData: PendingSaleData = JSON.parse(pendingSaleData);
+        return parsedData.note || "";
+      } catch (error) {
+        console.error('Error parsing note during initialization:', error);
+      }
+    }
+  }
+  return "";
+ });
+ 
+ const [discountPercent, setDiscountPercent] = useState(() => {
+  if (typeof window !== 'undefined') {
+    const pendingSaleData = localStorage.getItem('pendingSale');
+    if (pendingSaleData) {
+      try {
+        const parsedData: PendingSaleData = JSON.parse(pendingSaleData);
+        if (parsedData.subtotal > 0 && parsedData.discount > 0) {
+          return (parsedData.discount / parsedData.subtotal) * 100;
+        }
+      } catch (error) {
+        console.error('Error parsing discount during initialization:', error);
+      }
+    }
+  }
+  return 0;
+ });
 
  // State for product view/action dropdown
  const [dropdownVisible, setDropdownVisible] = useState<string | null>(null);
@@ -98,6 +194,47 @@ const SalesPage = () => {
   isLoading,
   isError,
  } = useGetProductsQuery(searchTerm);
+
+ // Check for pending sale data in localStorage when component mounts
+ useEffect(() => {
+  console.log("========== SALES PAGE useEffect FOR CART RESTORATION ==========");
+  console.log("Current cart length:", cart.length);
+  
+  if (typeof window !== 'undefined') {
+    const pendingSaleData = localStorage.getItem('pendingSale');
+    console.log("pendingSale in localStorage:", pendingSaleData ? 'FOUND' : 'NOT FOUND');
+    
+    if (pendingSaleData) {
+      try {
+        const parsedData: PendingSaleData = JSON.parse(pendingSaleData);
+        console.log('Parsed pendingSale data:', {
+          itemsCount: parsedData.items.length,
+          customerExists: !!parsedData.customer,
+          subtotal: parsedData.subtotal,
+          discount: parsedData.discount,
+          paymentMethod: parsedData.paymentMethod
+        });
+        
+        // Show notification about restored cart
+        if (parsedData.items.length > 0) {
+          console.log('Setting notification for restored cart');
+          setNotification({
+            show: true,
+            message: "Cart restored from previous session",
+            type: "info",
+          });
+          
+          // Auto-hide notification after 3 seconds
+          setTimeout(() => {
+            setNotification((prev) => ({ ...prev, show: false }));
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('Error parsing pending sale data in useEffect:', error);
+      }
+    }
+  }
+ }, []); // Only run once on component mount
 
  // Filter products based on search and category
  const filteredProducts = useMemo(() => {
@@ -148,6 +285,7 @@ const SalesPage = () => {
 
  // Cart functions
  const addToCart = (product: Product) => {
+  console.log(`Adding product to cart: ${product.name}`);
   const existingItem = cart.find(
    (item) => item.product.productId === product.productId
   );
@@ -155,9 +293,11 @@ const SalesPage = () => {
   if (existingItem) {
    // Don't exceed available stock
    if (existingItem.quantity >= product.stockQuantity) {
+    console.log(`Cannot add more ${product.name} - reached max stock of ${product.stockQuantity}`);
     return;
    }
 
+   console.log(`Increasing quantity of ${product.name} from ${existingItem.quantity} to ${existingItem.quantity + 1}`);
    setCart(
     cart.map((item) =>
      item.product.productId === product.productId
@@ -166,40 +306,82 @@ const SalesPage = () => {
     )
    );
   } else {
+   console.log(`Adding new product to cart: ${product.name} (qty: 1)`);
    setCart([...cart, { product, quantity: 1 }]);
   }
+  
+  // Update localStorage with new cart
+  updatePendingSaleInLocalStorage([...cart, { product, quantity: 1 }]);
  };
 
  const removeFromCart = (productId: string) => {
-  setCart(cart.filter((item) => item.product.productId !== productId));
+  console.log(`Removing product from cart: id=${productId}`);
+  const newCart = cart.filter((item) => item.product.productId !== productId);
+  setCart(newCart);
+  
+  // Update localStorage with new cart
+  updatePendingSaleInLocalStorage(newCart);
  };
 
  const updateCartItemQuantity = (productId: string, newQuantity: number) => {
+  console.log(`Updating quantity for product id=${productId} to ${newQuantity}`);
   // Handle invalid input
   if (isNaN(newQuantity) || newQuantity === 0) {
+   console.log(`Invalid quantity ${newQuantity}, removing item from cart`);
    removeFromCart(productId);
    return;
   }
 
   if (newQuantity < 0) {
+   console.log(`Negative quantity ${newQuantity} not allowed`);
    return; // Ignore negative quantities
   }
 
   const product = products.find((p) => p.productId === productId);
   if (!product) {
+   console.log(`Product id=${productId} not found in products list`);
    return;
   }
 
   // Enforce stock limit
   const quantity = Math.min(newQuantity, product.stockQuantity);
+  console.log(`Enforcing stock limit: requested=${newQuantity}, available=${product.stockQuantity}, final=${quantity}`);
 
-  setCart(
-   cart.map((item) =>
+  const newCart = cart.map((item) =>
     item.product.productId === productId
-     ? { ...item, quantity: quantity }
-     : item
-   )
+      ? { ...item, quantity: quantity }
+      : item
   );
+  
+  setCart(newCart);
+  
+  // Update localStorage with new cart
+  updatePendingSaleInLocalStorage(newCart);
+ };
+
+ // Helper function to update localStorage with current cart state
+ const updatePendingSaleInLocalStorage = (currentCart: CartItem[]) => {
+  console.log(`Updating localStorage with cart of ${currentCart.length} items`);
+  
+  // Calculate values based on current cart
+  const currentSubtotal = currentCart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const currentDiscount = (currentSubtotal * discountPercent) / 100;
+  const currentTax = (currentSubtotal - currentDiscount) * 0.1;
+  const currentTotal = currentSubtotal - currentDiscount + currentTax;
+  
+  const pendingSaleData = {
+    customer: selectedCustomer,
+    items: currentCart,
+    subtotal: currentSubtotal,
+    discount: currentDiscount,
+    tax: currentTax,
+    total: currentTotal,
+    paymentMethod,
+    note,
+  };
+  
+  localStorage.setItem('pendingSale', JSON.stringify(pendingSaleData));
+  console.log('Cart saved to localStorage');
  };
 
  // Calculations
@@ -219,10 +401,14 @@ const SalesPage = () => {
   [subtotal, discount, tax]
  );
 
- // Process sale
+ // Process sale - Save to localStorage and redirect to confirmation page
  const processSale = () => {
-  // Will be connected to API later
-  console.log({
+  console.log("========== PROCESSING SALE ==========");
+  console.log(`Processing sale with ${cart.length} items`);
+  console.log(`Cart items: ${cart.map(item => `${item.product.name} (${item.quantity}x)`).join(', ')}`);
+  
+  // Store the pending sale data in localStorage
+  const pendingSaleData = {
    customer: selectedCustomer,
    items: cart,
    subtotal,
@@ -231,32 +417,57 @@ const SalesPage = () => {
    total,
    paymentMethod,
    note,
+  };
+  
+  console.log('Saving finalized sale data to localStorage:', {
+    itemCount: pendingSaleData.items.length,
+    subtotal: pendingSaleData.subtotal,
+    total: pendingSaleData.total,
+    hasCustomer: !!pendingSaleData.customer
   });
-
-  // Show success notification
-  setNotification({
-   show: true,
-   message: "Sale processed successfully!",
-   type: "success",
-  });
-
-  // Auto-hide notification after 5 seconds
-  setTimeout(() => {
-   setNotification((prev) => ({ ...prev, show: false }));
-  }, 5000);
-
-  // Reset state after sale
-  setCart([]);
-  setSelectedCustomer(null);
-  setNote("");
-  setDiscountPercent(0);
-  setPaymentMethod("cash");
-  setSearchTerm("");
-  setCategoryFilter("");
+  
+  // Save to localStorage so the confirmation page can access it
+  localStorage.setItem('pendingSale', JSON.stringify(pendingSaleData));
+  
+  // Navigate to the confirmation page
+  console.log('Navigating to confirmation page');
+  router.push('/sales/confirm');
  };
 
  // Check if we can proceed with sale
  const canProcessSale = cart.length > 0;
+
+ // Update localStorage when discount changes
+ useEffect(() => {
+  if (cart.length > 0) {
+    console.log(`Discount percent changed to ${discountPercent}%, updating localStorage`);
+    updatePendingSaleInLocalStorage(cart);
+  }
+ }, [discountPercent]);
+
+ // Update localStorage when note changes
+ useEffect(() => {
+  if (cart.length > 0) {
+    console.log(`Note changed, updating localStorage`);
+    updatePendingSaleInLocalStorage(cart);
+  }
+ }, [note]);
+
+ // Update localStorage when payment method changes
+ useEffect(() => {
+  if (cart.length > 0) {
+    console.log(`Payment method changed to ${paymentMethod}, updating localStorage`);
+    updatePendingSaleInLocalStorage(cart);
+  }
+ }, [paymentMethod]);
+
+ // Update localStorage when customer changes
+ useEffect(() => {
+  if (cart.length > 0) {
+    console.log(`Customer changed to ${selectedCustomer?.name || 'none'}, updating localStorage`);
+    updatePendingSaleInLocalStorage(cart);
+  }
+ }, [selectedCustomer]);
 
  return (
   <div className="flex flex-col h-full min-h-screen bg-gray-50 relative">
@@ -419,7 +630,7 @@ const SalesPage = () => {
              )}
             </span>
            </span>
-           <span className=" text-lg font-semibold text-gray-900">
+           <span className=" text-md font-semibold text-gray-900">
             {formatPrice(product)}
            </span>
           </div>
@@ -801,7 +1012,4 @@ const SalesPage = () => {
     </div>
    )}
   </div>
- );
-};
-
-export default SalesPage;
+ )};
